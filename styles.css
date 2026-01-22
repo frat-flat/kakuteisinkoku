@@ -330,3 +330,203 @@ button:hover {
         margin-left: 0;
     }
 }
+
+/* Error Modal */
+.error-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.error-modal.hidden {
+    display: none;
+}
+
+.error-modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: var(--border-radius);
+    max-width: 450px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.error-modal-content h3 {
+    color: var(--error-color);
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--error-color);
+    padding-bottom: 10px;
+}
+
+.error-modal-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.error-modal-content li {
+    margin-bottom: 15px;
+    padding: 12px;
+    background-color: #FFF3F3;
+    border-left: 4px solid var(--error-color);
+    border-radius: 4px;
+}
+
+.error-modal-content li strong {
+    color: var(--text-color);
+}
+
+.error-modal-content .example {
+    display: block;
+    margin-top: 5px;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.error-modal-content button {
+    background-color: var(--primary-color);
+    color: white;
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Input Error State */
+.input-error {
+    border-color: var(--error-color) !important;
+    background-color: #FFF8F8 !important;
+}
+
+/* Warning Info Box */
+.info-box-warning {
+    background-color: #FFF8E1;
+    border: 1px solid #FFE082;
+    border-left: 4px solid #FFA000;
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+}
+
+.info-box-warning p {
+    margin: 0;
+    color: #5D4037;
+}
+
+.info-box-warning p:first-child {
+    margin-bottom: 5px;
+}
+
+.info-box-warning strong {
+    color: #E65100;
+}
+
+/* Password Toggle */
+/* Wrapper kept for potential future structure, or can be simplified if inputs are standalone blocks */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    /* No longer need padding for icon */
+    padding-right: 12px;
+}
+
+/* Hide browser default password reveal button (Edge/IE) */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
+/* Disabled State Styling */
+button:disabled,
+.btn-submit:disabled {
+    background-color: #A0A0A0;
+    /* Gray */
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+input[type="checkbox"]:disabled+span {
+    color: #A0A0A0;
+}
+
+/* Checkbox label itself can look disabled if interaction is blocked */
+.checkbox-card:has(input:disabled) {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+    border-color: #ddd;
+}
+
+/* Fallback for browsers not supporting :has */
+.checkbox-card.disabled {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+    border-color: #ddd;
+}
+
+/* Banking Candidate Select Styles */
+.banking-input-container {
+    position: relative;
+    width: 100%;
+}
+
+#bankCandidateSelect,
+#branchCandidateSelect {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    width: 100%;
+    max-height: 200px;
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Review Table Styles */
+.review-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.review-table th,
+.review-table td {
+    text-align: left;
+    padding: 10px 12px;
+    vertical-align: top;
+    border-bottom: 1px solid #eee;
+}
+
+.review-table th {
+    width: 40%;
+    font-weight: normal;
+    color: var(--text-muted);
+    background-color: #fafafa;
+}
+
+.review-table td {
+    width: 60%;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.review-section-header {
+    background-color: var(--secondary-color) !important;
+    color: white !important;
+    font-weight: bold;
+    font-size: 16px;
+    padding: 12px !important;
+}

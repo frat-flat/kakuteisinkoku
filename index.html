@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>確定申告代行フォーム | ヨサンダス</title>
+    <title>確定申告について | ヨサンダス</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -12,7 +12,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>確定申告代行フォーム</h1>
+            <h1>確定申告について</h1>
             <div class="progress-bar-container">
                 <div class="progress-bar" id="progressBar"></div>
             </div>
@@ -69,7 +69,7 @@
                 <div class="message-box">
                     <h2>ご案内</h2>
                     <p>ご回答ありがとうございます。</p>
-                    <p>現在、調整を行っております。2月末までにはご案内をお送りしますので、しばらくお待ちください。</p>
+                    <p>2月末までに申告に必要な書類を準備してお渡しいたします。<br>しばらくお待ちください。</p>
                 </div>
             </section>
 
@@ -242,11 +242,21 @@
 
                 <div class="form-group">
                     <label for="dob">生年月日 <span class="required">必須</span></label>
-                    <input type="date" id="dob" name="dob" max="9999-12-31" required>
+                    <input type="date" id="dob" name="dob" required>
                 </div>
                 <div class="form-group">
                     <label for="myNumber">マイナンバー（個人番号） <span class="required">必須</span></label>
-                    <input type="text" id="myNumber" name="myNumber" required placeholder="12桁の数字（ハイフンなし）">
+                    <div class="password-wrapper">
+                        <input type="password" id="myNumber" name="myNumber" required placeholder="12桁の数字（ハイフンなし）">
+
+                    </div>
+                    <label for="myNumberConfirm" style="margin-top: 10px;">マイナンバー（確認用） <span
+                            class="required">必須</span></label>
+                    <div class="password-wrapper">
+                        <input type="password" id="myNumberConfirm" name="myNumberConfirm" required
+                            placeholder="確認のためもう一度入力してください">
+
+                    </div>
                     <p class="helper-text">※12桁の数字のみ入力してください（ハイフン不要）</p>
                 </div>
                 <div class="form-group">
@@ -254,6 +264,33 @@
                     <div class="radio-group-horizontal">
                         <label><input type="radio" name="blueReturn" value="yes" required> はい</label>
                         <label><input type="radio" name="blueReturn" value="no"> いいえ</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <p class="question-label">過去に確定申告をしたことがありますか？ <span class="required">必須</span></p>
+                    <div class="radio-group-horizontal">
+                        <label><input type="radio" name="pastFiling" value="yes" required
+                                onchange="togglePastFiling(true)"> はい</label>
+                        <label><input type="radio" name="pastFiling" value="no" onchange="togglePastFiling(false)">
+                            いいえ</label>
+                    </div>
+                </div>
+
+                <div id="etaxIdBlock" class="hidden">
+                    <div class="form-group">
+                        <label>利用者識別番号 <span class="required">必須</span></label>
+                        <input type="text" name="etaxId" id="etaxId" placeholder="16桁の数字" inputmode="numeric"
+                            pattern="\d{16}" maxlength="16">
+                        <p class="helper-text">e-Taxのログイン時に必要となります。</p>
+                    </div>
+                    <div class="form-group">
+                        <label>e-Tax暗証番号 <span class="required">必須</span></label>
+                        <div class="password-wrapper">
+                            <input type="password" name="etaxPassword" id="etaxPassword" placeholder="英数字8〜50文字"
+                                minlength="8" maxlength="50">
+                        </div>
+                        <p class="helper-text">e-Taxのログイン時に必要となります。</p>
                     </div>
                 </div>
 
@@ -277,8 +314,8 @@
                 </div>
 
                 <div id="headRelationBlock" class="hidden form-group">
-                    <label>世帯主との続柄</label>
-                    <select name="headRelation">
+                    <label>世帯主との続柄 <span class="required" id="headRelRequiredMark">必須</span></label>
+                    <select name="headRelation" onchange="handleHeadRelationChange(this.value)">
                         <option value="">選択してください</option>
                         <option value="spouse">配偶者</option>
                         <option value="child">子</option>
@@ -289,32 +326,160 @@
 
                 <div class="form-group">
                     <label>現在の婚姻状況 <span class="required">必須</span></label>
-                    <select name="maritalStatus" required onchange="toggleSpouseBlock(this.value)">
+                    <select name="maritalStatus" required onchange="toggleMaritalStatus(this.value)">
                         <option value="">選択してください</option>
-                        <option value="married">婚姻中</option>
+                        <option value="married">婚姻中（法律婚）</option>
+                        <option value="commonlaw">事実婚（内縁関係）</option>
                         <option value="divorced">離婚</option>
                         <option value="bereaved">死別</option>
                         <option value="single">未婚</option>
                     </select>
                 </div>
 
-                <!-- Spouse Details -->
+                <!-- Common-law Marriage Info -->
+                <div id="commonlawInfo" class="hidden info-box-warning">
+                    <p>⚠️ <strong>配偶者控除対象外</strong></p>
+                    <p>事実婚（内縁関係）の場合、税法上の配偶者控除は適用されません。</p>
+                </div>
+
+                <!-- Spouse Details (Legal Marriage Only) -->
                 <div id="spouseBlock" class="hidden card-section">
                     <h3>配偶者の詳細</h3>
+
                     <div class="form-group">
-                        <p class="question-label">配偶者は同居ですか？</p>
-                        <div class="radio-group-horizontal">
-                            <label><input type="radio" name="spouseLiveTogether" value="yes"> 同居</label>
-                            <label><input type="radio" name="spouseLiveTogether" value="no"> 別居</label>
+                        <label>配偶者の氏名（フルネーム） <span class="required">必須</span></label>
+                        <input type="text" name="spouseName" required placeholder="例：山田 花子">
+                    </div>
+                    <div class="form-group">
+                        <label>配偶者の氏名（カナ） <span class="required">必須</span></label>
+                        <input type="text" name="spouseKana" required placeholder="例：ヤマダ ハナコ">
+                    </div>
+
+                    <div class="form-group">
+                        <label>配偶者の生年月日 <span class="required">必須</span></label>
+                        <input type="date" name="spouseDob" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>配偶者のマイナンバー <span class="required">必須</span></label>
+                        <div class="password-wrapper">
+                            <input type="password" id="spouseMyNumber" name="spouseMyNumber" required
+                                placeholder="12桁の数字">
+
+                        </div>
+                        <label style="margin-top:10px;">配偶者のマイナンバー（確認用） <span class="required">必須</span></label>
+                        <div class="password-wrapper">
+                            <input type="password" id="spouseMyNumberConfirm" name="spouseMyNumberConfirm" required
+                                placeholder="確認のためもう一度入力してください">
+
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>配偶者の生年月日</label>
-                        <input type="date" name="spouseDob" max="9999-12-31">
-                    </div>
+
                     <div class="form-group">
                         <label>配偶者の所得見込み</label>
                         <input type="text" name="spouseIncome" placeholder="例：100万円">
+                    </div>
+
+                    <div class="form-group">
+                        <p class="question-label">配偶者に障害はありますか？ <span class="required">必須</span></p>
+                        <div class="radio-group-horizontal">
+                            <label><input type="radio" name="spouseDisability" value="none" required> なし</label>
+                            <label><input type="radio" name="spouseDisability" value="general"> 一般障害</label>
+                            <label><input type="radio" name="spouseDisability" value="special"> 特別障害</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <p class="question-label">配偶者を扶養に入れますか？ <span class="required">必須</span></p>
+                        <div class="radio-group-horizontal">
+                            <label><input type="radio" name="spouseAsDependent" value="yes" required
+                                    onchange="updateSpouseAsDependentUI()"> はい</label>
+                            <label><input type="radio" name="spouseAsDependent" value="no"
+                                    onchange="updateSpouseAsDependentUI()"> いいえ</label>
+                        </div>
+                        <p class="helper-text">配偶者控除または配偶者特別控除を適用する場合は「はい」</p>
+                    </div>
+
+                    <div class="form-group">
+                        <p class="question-label">配偶者は同居ですか？ <span class="required">必須</span></p>
+                        <div class="radio-group-horizontal">
+                            <label><input type="radio" name="spouseLiveTogether" value="yes" checked
+                                    onchange="toggleSpouseAddress(false)"> 同居</label>
+                            <label><input type="radio" name="spouseLiveTogether" value="no"
+                                    onchange="toggleSpouseAddress(true)"> 別居</label>
+                        </div>
+                    </div>
+
+                    <!-- Separated Spouse Address -->
+                    <div id="spouseAddressBlock" class="hidden"
+                        style="margin-top: 15px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #6EB5C0;">
+                        <h4>配偶者の住所</h4>
+                        <div class="form-group">
+                            <label>郵便番号 <span class="required">必須</span> <span class="helper-text">（半角ハイフン入力
+                                    123-4567）</span></label>
+                            <input type="text" name="spouseZip" placeholder="123-4567" inputmode="numeric">
+                        </div>
+                        <div class="form-group">
+                            <label>都道府県 <span class="required">必須</span></label>
+                            <select name="spousePref">
+                                <option value="">選択してください</option>
+                                <option value="北海道">北海道</option>
+                                <option value="青森県">青森県</option>
+                                <option value="岩手県">岩手県</option>
+                                <option value="宮城県">宮城県</option>
+                                <option value="秋田県">秋田県</option>
+                                <option value="山形県">山形県</option>
+                                <option value="福島県">福島県</option>
+                                <option value="茨城県">茨城県</option>
+                                <option value="栃木県">栃木県</option>
+                                <option value="群馬県">群馬県</option>
+                                <option value="埼玉県">埼玉県</option>
+                                <option value="千葉県">千葉県</option>
+                                <option value="東京都">東京都</option>
+                                <option value="神奈川県">神奈川県</option>
+                                <option value="新潟県">新潟県</option>
+                                <option value="富山県">富山県</option>
+                                <option value="石川県">石川県</option>
+                                <option value="福井県">福井県</option>
+                                <option value="山梨県">山梨県</option>
+                                <option value="長野県">長野県</option>
+                                <option value="岐阜県">岐阜県</option>
+                                <option value="静岡県">静岡県</option>
+                                <option value="愛知県">愛知県</option>
+                                <option value="三重県">三重県</option>
+                                <option value="滋賀県">滋賀県</option>
+                                <option value="京都府">京都府</option>
+                                <option value="大阪府">大阪府</option>
+                                <option value="兵庫県">兵庫県</option>
+                                <option value="奈良県">奈良県</option>
+                                <option value="和歌山県">和歌山県</option>
+                                <option value="鳥取県">鳥取県</option>
+                                <option value="島根県">島根県</option>
+                                <option value="岡山県">岡山県</option>
+                                <option value="広島県">広島県</option>
+                                <option value="山口県">山口県</option>
+                                <option value="徳島県">徳島県</option>
+                                <option value="香川県">香川県</option>
+                                <option value="愛媛県">愛媛県</option>
+                                <option value="高知県">高知県</option>
+                                <option value="福岡県">福岡県</option>
+                                <option value="佐賀県">佐賀県</option>
+                                <option value="長崎県">長崎県</option>
+                                <option value="熊本県">熊本県</option>
+                                <option value="大分県">大分県</option>
+                                <option value="宮崎県">宮崎県</option>
+                                <option value="鹿児島県">鹿児島県</option>
+                                <option value="沖縄県">沖縄県</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>市区町村・番地 <span class="required">必須</span></label>
+                            <input type="text" name="spouseCity" placeholder="市区町村・番地">
+                        </div>
+                        <div class="form-group">
+                            <label>建物名・部屋番号</label>
+                            <input type="text" name="spouseBuilding" placeholder="建物名・部屋番号">
+                        </div>
                     </div>
                 </div>
 
@@ -329,34 +494,57 @@
                 </div>
 
                 <div id="dependentsContainer" class="hidden">
+                    <!-- Spouse as dependent notice -->
+                    <div id="spouseAsDependentNotice" class="hidden info-box"
+                        style="background-color: #e8f5e9; border-left: 4px solid #388E3C; padding: 12px; margin-bottom: 15px;">
+                        <p style="margin: 0; color: #2e7d32;">
+                            <strong>✓ 配偶者は扶養親族として登録済みです</strong><br>
+                            <span style="font-size: 14px;">配偶者の情報は配偶者欄で入力済みのため、ここでは配偶者以外の扶養親族の人数を入力してください。</span>
+                        </p>
+                    </div>
+                    <div class="form-group">
+                        <label id="dependentCountLabel">扶養親族の人数 <span class="required">必須</span></label>
+                        <input type="number" id="dependentCount" name="dependentCount" min="0" max="10"
+                            placeholder="人数を入力" oninput="updateDependentForms(this.value)">
+                        <p id="dependentCountHelper" class="helper-text hidden">配偶者を除いた扶養親族の人数を入力してください</p>
+                    </div>
                     <h3>扶養親族の詳細</h3>
                     <div id="dependentsList"></div>
-                    <button type="button" class="btn-secondary" onclick="addDependent()">+ 扶養親族を追加</button>
+                    <!-- Removed manual add button as requested to be auto driven by count -->
                 </div>
 
-                <div class="card-section">
-                    <h3>ひとり親・寡婦控除の確認</h3>
-                    <div class="form-group">
-                        <p class="question-label">生計を一にする子はいますか？</p>
-                        <div class="radio-group-horizontal">
-                            <label><input type="radio" name="hasChildTogether" value="yes"> はい</label>
-                            <label><input type="radio" name="hasChildTogether" value="no"> いいえ</label>
-                        </div>
+                <div id="singleParentSection" class="card-section">
+                    <h3>ひとり親・寡婦控除（寡夫）の確認</h3>
+
+                    <!-- Common-law warning (shown when commonlaw selected) -->
+                    <div id="singleParentCommonlawWarning" class="hidden info-box-warning">
+                        <p>⚠️ <strong>ひとり親控除・寡婦控除対象外</strong></p>
+                        <p>事実婚（内縁関係）のパートナーがいる場合、これらの控除は適用されません。</p>
                     </div>
-                    <div class="form-group">
-                        <p class="question-label">その子を扶養に入れる予定ですか？</p>
-                        <div class="radio-group-horizontal">
-                            <label><input type="radio" name="supportChild" value="yes"> はい</label>
-                            <label><input type="radio" name="supportChild" value="no"> いいえ</label>
-                            <label><input type="radio" name="supportChild" value="unknown"> 不明</label>
+
+                    <div id="singleParentQuestions">
+                        <div class="form-group">
+                            <p class="question-label">生計を一にする子はいますか？</p>
+                            <div class="radio-group-horizontal">
+                                <label><input type="radio" name="hasChildTogether" value="yes"> はい</label>
+                                <label><input type="radio" name="hasChildTogether" value="no"> いいえ</label>
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <p class="question-label">あなたの合計所得は500万円以下ですか？</p>
-                        <div class="radio-group-horizontal">
-                            <label><input type="radio" name="incomeUnder5m" value="yes"> はい</label>
-                            <label><input type="radio" name="incomeUnder5m" value="no"> いいえ</label>
-                            <label><input type="radio" name="incomeUnder5m" value="unknown"> 不明</label>
+                        <div class="form-group">
+                            <p class="question-label">その子を扶養に入れる予定ですか？</p>
+                            <div class="radio-group-horizontal">
+                                <label><input type="radio" name="supportChild" value="yes"> はい</label>
+                                <label><input type="radio" name="supportChild" value="no"> いいえ</label>
+                                <label><input type="radio" name="supportChild" value="unknown"> 不明</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <p class="question-label">あなたの合計所得は500万円以下ですか？</p>
+                            <div class="radio-group-horizontal">
+                                <label><input type="radio" name="incomeUnder5m" value="yes"> はい</label>
+                                <label><input type="radio" name="incomeUnder5m" value="no"> いいえ</label>
+                                <label><input type="radio" name="incomeUnder5m" value="unknown"> 不明</label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -370,7 +558,6 @@
             <!-- Section D: Income Details (Conditional) -->
             <section id="section-d" class="form-step">
                 <h2>給与所得について</h2>
-                <p class="info-text">本案件の事業所得に関する情報は、弊社側で把握済みのため入力不要です。</p>
 
                 <!-- Display only if incomeType is 2 -->
                 <div id="salaryIncomeBlock">
@@ -447,8 +634,8 @@
                             <span>生命保険料控除</span>
                         </label>
                         <div id="detail-lifeIns" class="deduction-detail hidden">
-                            <label class="file-label">控除証明書のアップロード</label>
-                            <input type="file" multiple>
+                            <label class="file-label">控除証明書のアップロード <span class="required">必須</span></label>
+                            <input type="file" multiple class="upload-required">
                         </div>
 
                         <label class="checkbox-card">
@@ -457,8 +644,8 @@
                             <span>地震保険料控除</span>
                         </label>
                         <div id="detail-earthquake" class="deduction-detail hidden">
-                            <label class="file-label">控除証明書のアップロード</label>
-                            <input type="file" multiple>
+                            <label class="file-label">控除証明書のアップロード <span class="required">必須</span></label>
+                            <input type="file" multiple class="upload-required">
                         </div>
 
                         <label class="checkbox-card">
@@ -467,8 +654,8 @@
                             <span>iDeCo・小規模企業共済</span>
                         </label>
                         <div id="detail-ideco" class="deduction-detail hidden">
-                            <label class="file-label">掛金払込証明書のアップロード</label>
-                            <input type="file" multiple>
+                            <label class="file-label">掛金払込証明書のアップロード <span class="required">必須</span></label>
+                            <input type="file" multiple class="upload-required">
                         </div>
 
                         <label class="checkbox-card">
@@ -477,8 +664,8 @@
                             <span>住宅ローン控除</span>
                         </label>
                         <div id="detail-housing" class="deduction-detail hidden">
-                            <label class="file-label">年末残高証明書等のアップロード</label>
-                            <input type="file" multiple>
+                            <label class="file-label">年末残高証明書等のアップロード <span class="required">必須</span></label>
+                            <input type="file" multiple class="upload-required">
                         </div>
 
                         <label class="checkbox-card">
@@ -508,11 +695,37 @@
                 <h2>還付金の受取口座</h2>
                 <div class="form-group">
                     <label>銀行名 <span class="required">必須</span></label>
-                    <input type="text" name="bankName" required>
+                    <div class="banking-input-container">
+                        <input type="text" name="bankNameSearch" id="bankNameSearch" placeholder="銀行名を入力（候補表示）"
+                            oninput="handleBankNameInput()" onfocus="handleBankNameInput()" autocomplete="off">
+                        <!-- Hidden real code selection -->
+                        <input type="hidden" name="bankCode" id="bankCode">
+                        <!-- Select box for candidates -->
+                        <select id="bankCandidateSelect" size="5" onchange="selectBankCandidate()"
+                            onblur="setTimeout(() => this.style.display='none', 200)">
+                            <option value="">候補を選択</option>
+                        </select>
+                    </div>
+                    <p class="helper-text">銀行名の一部を入力すると候補が表示されます。</p>
                 </div>
                 <div class="form-group">
-                    <label>支店名 <span class="required">必須</span></label>
-                    <input type="text" name="branchName" required>
+                    <label>支店名・支店コード <span class="required">必須</span></label>
+                    <div class="banking-input-container">
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" name="branchCodeInput" id="branchCodeInput" placeholder="店番(3桁)"
+                                style="width: 100px;" maxlength="3" oninput="handleBranchCodeInput()" disabled>
+                            <input type="text" name="branchNameInput" id="branchNameInput" placeholder="支店名を入力"
+                                style="flex-grow:1;" oninput="handleBranchNameInput()" disabled>
+                        </div>
+                        <!-- Candidate Select -->
+                        <select id="branchCandidateSelect" size="5" onchange="selectBranchCandidate()"
+                            onblur="setTimeout(() => this.style.display='none', 200)">
+                            <option value="">候補を選択</option>
+                        </select>
+                    </div>
+                    <input type="hidden" name="branchCode" id="realBranchCode">
+                    <input type="hidden" name="branchName" id="realBranchName">
+                    <p class="helper-text">コードまたは支店名を入力すると、もう一方が自動候補として表示されます。</p>
                 </div>
                 <div class="form-group">
                     <label>預金種別 <span class="required">必須</span></label>
@@ -523,11 +736,12 @@
                 </div>
                 <div class="form-group">
                     <label>口座番号 <span class="required">必須</span></label>
-                    <input type="text" name="accountNumber" required>
+                    <input type="text" name="accountNumber" inputmode="numeric" pattern="\d*" required
+                        placeholder="6桁または7桁">
                 </div>
                 <div class="form-group">
                     <label>名義人（カナ） <span class="required">必須</span></label>
-                    <input type="text" name="accountHolder" required>
+                    <input type="text" name="accountHolder" required placeholder="ヤマダ タロウ">
                 </div>
 
                 <div class="form-group">
@@ -539,6 +753,33 @@
                     </div>
                 </div>
 
+                <div class="nav-buttons">
+                    <button type="button" class="btn-prev" onclick="prevStep()">戻る</button>
+                    <button type="button" class="btn-next" onclick="nextStep()">次へ</button>
+                </div>
+            </section>
+
+            <!-- Section Review: Input Check -->
+            <section id="section-review" class="form-step">
+                <h2>入力情報の確認</h2>
+                <div id="reviewContainer">
+                    <!-- JS generated -->
+                </div>
+                <div class="nav-buttons">
+                    <button type="button" class="btn-prev" onclick="prevStep()">戻る</button>
+                    <button type="button" class="btn-next" onclick="nextStep()">次へ</button>
+                </div>
+            </section>
+
+            <!-- Section Accountant: Tax Accountant Info -->
+            <section id="section-accountant" class="form-step">
+                <h2>担当税理士について</h2>
+                <div class="card-section">
+                    <h3>以下の税理士が担当します</h3>
+                    <p><strong>氏名:</strong> 佐藤 一郎（サトウ イチロウ）</p>
+                    <p><strong>登録番号:</strong> 12345</p>
+                    <p><strong>事務所:</strong> 佐藤税理士事務所</p>
+                </div>
                 <div class="nav-buttons">
                     <button type="button" class="btn-prev" onclick="prevStep()">戻る</button>
                     <button type="button" class="btn-next" onclick="nextStep()">次へ</button>
@@ -561,19 +802,34 @@
                 <div class="card-section">
                     <h3>同意事項</h3>
                     <div class="terms-box">
-                        <p>ここに利用規約や個人情報の取り扱いに関する同意文が入ります。内容を確認の上、同意してください。</p>
-                        <p>1. 当社は、提供された情報を確定申告代行業務のみに使用します。</p>
-                        <p>2. 正確な情報を提供いただけない場合、適切な申告ができない可能性があります。</p>
+                        <p><strong>個人情報の取り扱いについて</strong></p>
+                        <p>当社は、お預かりした個人情報を以下の目的で利用します。</p>
+                        <ul>
+                            <li>確定申告代行業務の遂行</li>
+                            <li>税務署への申告書提出</li>
+                            <li>関連するご連絡・お問い合わせ対応</li>
+                        </ul>
+                        <p>個人情報は、法令に基づく場合を除き、第三者に提供することはありません（ただし、税務署への提出を除く）。</p>
+                        <p>（スクロールして最後まで確認してください）</p>
+                        <p><strong>第1条（目的）</strong><br>本規約は、当社が提供する確定申告代行サービス（以下「本サービス」）の利用条件を定めるものです。</p>
+                        <p><strong>第2条（委託の内容）</strong><br>利用者は、当社に対し、所得税の確定申告書の作成および提出の代行を委託します。</p>
+                        <p><strong>第3条（資料の提供）</strong><br>利用者は、本サービスの遂行に必要な資料を、真実かつ正確な内容で当社に提供するものとします。</p>
+                        <p><strong>第4条（責任の範囲）</strong><br>当社は、利用者が提供した資料に基づき申告書を作成します。資料の不備や虚偽による不利益について、当社は一切の責任を負いません。
+                        </p>
+                        <p><strong>第5条（守秘義務）</strong><br>当社は、本サービスの遂行上知り得た利用者の個人情報および秘密情報を、厳重に管理し、意図的に第三者に漏洩しません。</p>
+                        <p><strong>第6条（解約）</strong><br>利用者は、いつでも本契約を解約することができますが、すでに着手した業務に対する報酬は発生する場合があります。</p>
+                        <p>個人情報の取り扱いに同意の上、送信してください。</p>
                     </div>
                     <label class="checkbox-card">
-                        <input type="checkbox" id="agreement" required>
+                        <input type="checkbox" id="agreement" required disabled>
                         <span>上記規約および個人情報の取り扱いに同意する</span>
                     </label>
                 </div>
 
                 <div class="nav-buttons">
                     <button type="button" class="btn-prev" onclick="prevStep()">戻る</button>
-                    <button type="submit" class="btn-submit" onclick="submitForm()">送信する</button>
+                    <button type="button" class="btn-submit" id="submitBtn" disabled
+                        onclick="if(validateCurrentStep()) confirmSubmit()">送信する</button>
                 </div>
             </section>
 
