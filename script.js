@@ -476,6 +476,17 @@ function getInputError(input) {
         }
     }
 
+    // Account Number: 6 or 7 digits
+    if (input.name === 'accountNumber' && input.value) {
+        if (!/^\d{6,7}$/.test(input.value)) {
+            return {
+                field: '口座番号',
+                message: '口座番号は6桁または7桁の半角数字で入力してください',
+                example: '1234567'
+            };
+        }
+    }
+
     return null;
 }
 
@@ -830,7 +841,10 @@ function validateCurrentStep() {
             const list = document.getElementById('dependentsList');
             const actualForms = list.children.length;
 
-            if (count < 1) {
+            const spouseAsDependent = document.querySelector('input[name="spouseAsDependent"]:checked');
+            const isSpouseDep = spouseAsDependent && spouseAsDependent.value === 'yes';
+
+            if (count < 1 && !isSpouseDep) {
                 isValid = false;
                 countInput.classList.add('input-error');
                 errorDetails.push({
@@ -1330,7 +1344,10 @@ function removeDependent(btn) {
 
     // Prevent deletion if it would make count 0 while "has dependents" is yes
     const hasDepsYes = document.querySelector('input[name="hasDependents"][value="yes"]:checked');
-    if (hasDepsYes && list.children.length <= 1) {
+    const spouseAsDependent = document.querySelector('input[name="spouseAsDependent"]:checked');
+    const isSpouseDep = spouseAsDependent && spouseAsDependent.value === 'yes';
+
+    if (hasDepsYes && list.children.length <= 1 && !isSpouseDep) {
         alert('扶養親族「いる」を選択している場合、1人以上の情報が必要です。');
         return;
     }
