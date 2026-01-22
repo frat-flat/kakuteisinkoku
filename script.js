@@ -71,45 +71,69 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initAutoSave() {
-    // Load saved data
+    // Load saved data with confirmation
     const savedData = localStorage.getItem('taxReturnFormData');
     if (savedData) {
-        try {
-            const data = JSON.parse(savedData);
-            Object.keys(data).forEach(key => {
-                const input = document.querySelector(`[name="${key}"]`);
-                if (input) {
-                    if (input.type === 'radio' || input.type === 'checkbox') {
-                        if (input.value === data[key]) {
-                            input.checked = true;
-                            // Trigger change events manually if needed (limited)
-                            input.dispatchEvent(new Event('change'));
-                        } else if (input.type === 'checkbox' && Array.isArray(data[key])) {
-                            if (data[key].includes(input.value)) {
-                                input.checked = true;
-                                input.dispatchEvent(new Event('change'));
-                            }
-                        }
-                    } else if (input.type !== 'file') {
-                        input.value = data[key];
-                        // Trigger input events
-                        input.dispatchEvent(new Event('input'));
-                    }
+        // Delay slightly to ensure UI is ready
+        setTimeout(() => {
+            if (confirm('保存されたデータが見つかりました。\n続きから入力を再開しますか？\n\n「OK」：保存されたデータを復元して再開\n「キャンセル」：データを削除して最初から作成')) {
+                try {
+                    const data = JSON.parse(savedData);
+                    restoreFormData(data);
+                } catch (e) {
+                    console.error('Failed to load saved data', e);
+                    localStorage.removeItem('taxReturnFormData');
                 }
-            });
-            // Restore Step? Maybe dangerous if validation fails. 
-            // Let's stick to restoring data only for now.
-        } catch (e) {
-            console.error('Failed to load saved data', e);
-        }
+            } else {
+                localStorage.removeItem('taxReturnFormData');
+                // Optional: Reload to ensure clean state if needed, but fields are empty by default
+                location.reload();
+            }
+        }, 100);
     }
 
     // Save on change
     document.body.addEventListener('change', saveProgress);
     document.body.addEventListener('input', (e) => {
-        // Debounce input saving slightly
+        // Debounce input saving
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
             saveProgress();
+        }
+    });
+}
+
+function restoreFormData(data) {
+    Object.keys(data).forEach(key => {
+        const input = document.querySelector(`[name="${key}"]`);
+        if (input) {
+            if (input.type === 'radio') {
+                const radio = document.querySelector(`input[name="${key}"][value="${data[key]}"]`);
+                if (radio) {
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            } else if (input.type === 'checkbox') {
+                // Checkbox array handling
+                if (Array.isArray(data[key])) {
+                    const cb = document.querySelector(`input[name="${key}"][value="${input.value}"]`);
+                    // Logic for multiple checkboxes with same name is tricky with querySelector
+                    // Use querySelectorAll for checkbox groups
+                    document.querySelectorAll(`input[name="${key}"]`).forEach(cb => {
+                        if (data[key].includes(cb.value)) {
+                            cb.checked = true;
+                            cb.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                } else if (input.value === data[key] || data[key] === true) { // Single boolean checkbox
+                    input.checked = true;
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            } else if (input.type !== 'file') {
+                input.value = data[key];
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                // For logic dependent fields like dependentCount
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         }
     });
 }
@@ -1735,7 +1759,11 @@ function collectFormData() {
     return formData;
 }
 
+let isSubmitting = false;
+
 async function confirmSubmit() {
+    if (isSubmitting) return;
+
     // File upload validation at final submission
     const activeDeductionDetails = document.querySelectorAll('.deduction-detail:not(.hidden)');
     let fileErrors = [];
@@ -1776,11 +1804,13 @@ async function confirmSubmit() {
         return;
     }
 
+    isSubmitting = true;
+
     // Collect form data
     const formData = collectFormData();
 
     // Show loading state
-    const submitBtn = document.querySelector('.btn-primary');
+    const submitBtn = document.querySelector('.btn-primary') || document.getElementById('submitBtn');
     const originalText = submitBtn ? submitBtn.textContent : '送信';
     if (submitBtn) {
         submitBtn.textContent = '送信中...';
@@ -1801,7 +1831,7 @@ async function confirmSubmit() {
         }
 
         // Clear saved progress on successful submit
-        localStorage.removeItem('taxFormData');
+        localStorage.removeItem('taxReturnFormData');
 
         showStep(11); // Success page
     } catch (error) {
@@ -1812,6 +1842,7 @@ async function confirmSubmit() {
             example: ''
         }]);
     } finally {
+        isSubmitting = false;
         // Restore button state
         if (submitBtn) {
             submitBtn.textContent = originalText;
