@@ -66,6 +66,61 @@ export default async function handler(req, res) {
             throw error;
         }
 
+        // --- Google Sheets Integration (GAS) ---
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbz3jFuBtR9SYyzcgwJZZKHLDerccZop-higTl6gfaOkwIZd8Q7PdEaPFJ7y36GFTEeh/exec';
+
+        try {
+            // Transform data for GAS if needed, or send as is
+            // GAS expects: { name, name_kana, etc... } matching the keys used in doPost
+            // We use the flat fields we just prepared for Supabase insert, plus full_form_data for backup
+
+            const gasPayload = {
+                // Using the same keys as the rowData mapping in GAS
+                name: formData.name,
+                name_kana: formData.nameKana,
+                dob: formData.dob,
+                zip: formData.zip,
+                address: formData.address,
+                phone: formData.phone,
+                email: formData.email,
+
+                income_type: formData.incomeType,
+                blue_return: formData.blueReturn,
+                past_filing: formData.pastFiling,
+                etax_id: formData.etaxId,
+
+                head_of_household: formData.headOfHousehold,
+                relation_to_head: formData.relationToHead,
+                marital_status: formData.maritalStatus,
+                spouse_name: formData.spouseName,
+                spouse_as_dependent: formData.spouseAsDependent,
+                has_dependents: formData.hasDependents,
+                dependent_count: formData.dependentCount,
+
+                furusato_nozei: formData.furusatoNozei,
+                medical_expenses: formData.medicalExpenses,
+
+                account_type: formData.accountType,
+                bank_name: formData.bankName,
+                branch_name: formData.branchName,
+                account_number: formData.accountNumber,
+                account_holder: formData.accountHolder,
+
+                full_form_data: formData
+            };
+
+            await fetch(GAS_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(gasPayload)
+            });
+
+        } catch (gasError) {
+            console.error('GAS Sync Error:', gasError);
+            // Don't fail the main request
+        }
+        // ---------------------------------------
+
         res.status(200).json({
             success: true,
             id: data[0].id,
