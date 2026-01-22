@@ -1690,7 +1690,35 @@ function renderReview() {
     container.innerHTML = html;
 }
 
-function confirmSubmit() {
+// Collect all form data into an object
+function collectFormData() {
+    const formData = {};
+    const form = document.getElementById('taxForm');
+    const inputs = form.querySelectorAll('input, select, textarea');
+
+    inputs.forEach(input => {
+        if (input.type === 'file' || input.type === 'button' || input.type === 'submit') return;
+        if (input.type === 'radio' && !input.checked) return;
+        if (input.type === 'checkbox' && !input.checked) return;
+
+        // Skip hidden elements
+        if (isHidden(input)) return;
+
+        const name = input.name;
+        if (!name) return;
+
+        if (input.type === 'checkbox') {
+            if (!formData[name]) formData[name] = [];
+            formData[name].push(input.value);
+        } else {
+            formData[name] = input.value;
+        }
+    });
+
+    return formData;
+}
+
+async function confirmSubmit() {
     // File upload validation at final submission
     const activeDeductionDetails = document.querySelectorAll('.deduction-detail:not(.hidden)');
     let fileErrors = [];
@@ -1727,8 +1755,51 @@ function confirmSubmit() {
     }
 
     // Final popup
-    if (confirm('本当に送信しますか？\n（修正が必要な場合は「キャンセル」を押して戻ってください）')) {
-        showStep(11); // Success
+    if (!confirm('本当に送信しますか？\n（修正が必要な場合は「キャンセル」を押して戻ってください）')) {
+        return;
+    }
+
+    // Collect form data
+    const formData = collectFormData();
+
+    // Show loading state
+    const submitBtn = document.querySelector('.btn-primary');
+    const originalText = submitBtn ? submitBtn.textContent : '送信';
+    if (submitBtn) {
+        submitBtn.textContent = '送信中...';
+        submitBtn.disabled = true;
+    }
+
+    try {
+        const response = await fetch('/api/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || '送信に失敗しました');
+        }
+
+        // Clear saved progress on successful submit
+        localStorage.removeItem('taxFormData');
+
+        showStep(11); // Success page
+    } catch (error) {
+        console.error('Submit error:', error);
+        showErrorModal([{
+            field: '送信エラー',
+            message: error.message || 'サーバーへの送信に失敗しました。しばらくしてからもう一度お試しください。',
+            example: ''
+        }]);
+    } finally {
+        // Restore button state
+        if (submitBtn) {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
     }
 }
 
