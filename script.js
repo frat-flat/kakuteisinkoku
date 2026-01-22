@@ -1806,18 +1806,81 @@ async function confirmSubmit() {
 
     isSubmitting = true;
 
-    // Collect form data
-    const formData = collectFormData();
-
     // Show loading state
     const submitBtn = document.querySelector('.btn-primary') || document.getElementById('submitBtn');
     const originalText = submitBtn ? submitBtn.textContent : '送信';
     if (submitBtn) {
-        submitBtn.textContent = '送信中...';
+        submitBtn.textContent = 'ファイルをアップロード中...';
         submitBtn.disabled = true;
     }
 
     try {
+        // --- 1. File Upload Phase ---
+        const fileUploadResults = {};
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+
+        // Collect all files to upload
+        const uploads = [];
+        fileInputs.forEach(input => {
+            if (input.files.length > 0) {
+                Array.from(input.files).forEach(file => {
+                    uploads.push({ inputName: input.name, file: file });
+                });
+            }
+        });
+
+        // Process uploads sequentially (or Promise.all)
+        // Using Promise.all for speed
+        if (uploads.length > 0) {
+            await Promise.all(uploads.map(async (item) => {
+                // Get Signed URL
+                const signRes = await fetch('/api/sign-upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileName: item.file.name,
+                        fileType: item.file.type
+                    })
+                });
+
+                if (!signRes.ok) throw new Error('アップロード用URLの取得に失敗しました');
+                const { signedUrl, publicUrl } = await signRes.json();
+
+                // Upload File to Supabase Storage (PUT)
+                const uploadRes = await fetch(signedUrl, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': item.file.type },
+                    body: item.file
+                });
+
+                if (!uploadRes.ok) throw new Error(`${item.file.name}のアップロードに失敗しました`);
+
+                // Store Result
+                if (!fileUploadResults[item.inputName]) {
+                    fileUploadResults[item.inputName] = [];
+                }
+                fileUploadResults[item.inputName].push(publicUrl);
+            }));
+        }
+
+        // --- 2. Data Submission Phase ---
+        if (submitBtn) submitBtn.textContent = '送信中...';
+
+        // Collect form data
+        const formData = collectFormData();
+
+        // Merge file URLs into formData
+        // Arrays are joined by comma or kept as array? 
+        // collectFormData handles arrays for checkboxes.
+        // Let's store files as comma-separated URLs or JSON string?
+        // To be safe for Spreadsheet, simple string is best.
+        // Or keep as array and let GAS handle it (JSON.stringify).
+
+        Object.keys(fileUploadResults).forEach(key => {
+            // Join URLs with newline or space for readability
+            formData[key] = fileUploadResults[key].join('\n');
+        });
+
         const response = await fetch('/api/submit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
