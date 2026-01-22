@@ -2,6 +2,7 @@
     "name": "kakuteishinkoku",
     "version": "1.0.0",
     "description": "確定申告情報収集フォーム",
+    "type": "module",
     "scripts": {
         "dev": "vercel dev"
     },
