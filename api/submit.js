@@ -67,7 +67,7 @@ export default async function handler(req, res) {
         }
 
         // --- Google Sheets Integration (GAS) ---
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbz8MuYUeW6GWNRPhdournJxc0S9MlBcXlqt_h1kK2J9ymNJdtcRFqM2nkOonqDj-Sji/exec';
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbyUUqUHtKhD2eUa6y_E1nilcqWuuitGpGQN5JpysfQQCTyWE_txFddcOaXsxSVkA70Q/exec';
 
         try {
             // Transform data for GAS if needed, or send as is
