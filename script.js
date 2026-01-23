@@ -1,21 +1,90 @@
-﻿// State tracking
+﻿/**
+ * =============================================================================
+ * script.js - 確定申告フォーム メインスクリプト
+ * =============================================================================
+ * 
+ * 【概要】
+ * このファイルは、確定申告情報収集フォームのフロントエンド全体を制御する
+ * メインJavaScriptファイルです。
+ * 
+ * 【主な機能】
+ * 
+ * ■ フォームナビゲーション
+ *   - showStep(index): 指定ステップを表示
+ *   - nextStep(): 次のステップへ進む（バリデーション付き）
+ *   - prevStep(): 前のステップへ戻る
+ *   - updateProgressBar(): プログレスバー更新
+ * 
+ * ■ 入力バリデーション
+ *   - validateCurrentStep(): 現在ステップの全フィールドを検証
+ *   - validateSingleInput(input): 個別フィールドのリアルタイム検証
+ *   - validateStrictUploads(): ファイルアップロード必須チェック
+ * 
+ * ■ 条件分岐表示
+ *   - toggleJan1Address(): 1月1日住所の表示切替
+ *   - toggleSpouseDetails(): 配偶者詳細の表示切替
+ *   - toggleDeductionDetail(): 控除詳細の表示切替
+ * 
+ * ■ 銀行情報
+ *   - initBankingData(): 銀行APIからデータ取得
+ *   - handleBankNameInput(): 銀行名入力時のオートコンプリート
+ *   - selectBankCandidate(): 銀行選択時の処理
+ * 
+ * ■ ファイルアップロード
+ *   - setupFileUploads(): ファイル入力の初期設定
+ *   - handleFileSelect(): ファイル選択時の処理（累積モード）
+ *   - removeFile(): 個別ファイル削除
+ * 
+ * ■ レビュー・送信
+ *   - renderReview(): 入力内容確認画面の生成
+ *   - collectFormData(): フォームデータの収集
+ *   - confirmSubmit(): 最終送信処理
+ * 
+ * ■ データ正規化
+ *   - toHalfWidth(): 全角→半角変換（数字）
+ *   - toFullWidthKana(): 半角→全角変換（カナ）
+ *   - formatPhone(): 電話番号フォーマット
+ * 
+ * 【セクション構成】
+ * section-a: 基本情報（氏名、フリガナ）
+ * section-b: 収入形態の確認
+ * section-c: 連絡先情報
+ * section-f: 世帯・扶養情報
+ * section-d: 給与所得詳細
+ * section-g: 控除の選択
+ * section-h: 銀行口座情報
+ * section-review: 入力内容確認
+ * section-accountant: 税理士情報
+ * section-i: 最終同意・送信
+ * section-j: 完了画面
+ * 
+ * =============================================================================
+ */
+
+// ============================================================================
+// グローバル状態管理
+// ============================================================================
+
+// 現在のステップインデックス
 let currentStepIndex = 0;
+
+// フォームセクションの順序定義
 const steps = [
-    'section-a', // 0: Basic Info
-    'section-b', // 1: Income Type
-    'section-termination', // 2: Fallback
-    'section-c', // 3: Contact
-    'section-f', // 4: Family & Household
-    'section-d', // 5: Income Details (Conditional)
-    'section-g', // 6: Deductions
-    'section-h', // 7: Bank
-    'section-review', // 8: Review Input
-    'section-accountant', // 9: Tax Accountant Info
-    'section-i', // 10: Final Consent & Submit
-    'section-j'  // 11: Completion
+    'section-a', // 0: 基本情報
+    'section-b', // 1: 収入形態確認
+    'section-termination', // 2: 終了画面（フォールバック）
+    'section-c', // 3: 連絡先
+    'section-f', // 4: 世帯・扶養
+    'section-d', // 5: 給与所得詳細（条件付き）
+    'section-g', // 6: 控除選択
+    'section-h', // 7: 銀行口座
+    'section-review', // 8: 入力内容確認
+    'section-accountant', // 9: 税理士情報
+    'section-i', // 10: 最終同意・送信
+    'section-j'  // 11: 完了
 ];
 
-// Logic History Stack
+// ナビゲーション履歴（戻るボタン用）
 let stepHistory = [0];
 
 document.addEventListener('DOMContentLoaded', () => {

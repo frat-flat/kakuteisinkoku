@@ -1,6 +1,48 @@
+/**
+ * =============================================================================
+ * backend/gas_script.js - Google Apps Script (GAS) データ受信・記録スクリプト
+ * =============================================================================
+ * 
+ * 【概要】
+ * このファイルは、Google Apps Script として Google Sheets に配置され、
+ * Vercel サーバーから送信されたフォームデータを受け取り、
+ * スプレッドシートに行として追記します。
+ * 
+ * 【デプロイ方法】
+ * 1. Google Sheets を開く
+ * 2. 拡張機能 → Apps Script を選択
+ * 3. このコードを貼り付け
+ * 4. デプロイ → 新しいデプロイ → ウェブアプリ を選択
+ * 5. 「全員」がアクセス可能に設定
+ * 6. 生成されたURLを submit.js の GAS_URL に設定
+ * 
+ * 【データ変換ルール】
+ * - '[SKIPPED]' → '-' (スキップされた項目)
+ * - 空文字/null/undefined → '未入力'
+ * - その他 → そのまま表示
+ * 
+ * 【列構成】
+ * A: 送信日時, B: 氏名, C: フリガナ, D: 生年月日, E: 郵便番号, F: 住所,
+ * G: 電話番号, H: メール, I: 収入の種類, J: 源泉徴収票, K: 青色申告,
+ * L: 過去申告, M: e-Tax ID, N: e-Tax PW, O: 続柄, P: 婚姻状況,
+ * Q-U: 配偶者情報, V-W: 扶養親族, X-AQ: 各種控除, AR-AU: 銀行情報,
+ * AV: 申告方法, AW-CE: 扶養親族詳細（最大5人）
+ * 
+ * =============================================================================
+ */
+
+/**
+ * doPost - POSTリクエストを受け取るメイン関数
+ * 
+ * @param {Object} e - Google Apps Script のイベントオブジェクト
+ * @returns {TextOutput} JSON形式のレスポンス
+ */
 function doPost(e) {
     try {
+        // リクエストボディをJSONとしてパース
         const data = JSON.parse(e.postData.contents);
+
+        // アクティブなスプレッドシートとシートを取得
         const ss = SpreadsheetApp.getActiveSpreadsheet();
         const sheet = ss.getActiveSheet();
 
