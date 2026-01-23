@@ -886,7 +886,8 @@ function handleSectionB() {
     let nextIndex;
 
     if (incomeType === '3') {
-        nextIndex = 2;
+        // Business Income Only -> Skip standard flow but MUST go to Review/Confirmation
+        nextIndex = 8; // Route to Review Page (section-review)
     } else {
         nextIndex = 3;
     }
@@ -2568,46 +2569,60 @@ function removeFile(input, indexToRemove) {
 
 
 
-// Check for missing uploads and confirm with user
-function checkMissingUploadsConfirm() {
-    // 1. Check Deduction Section (Section G)
+// Strict Validation for Review Page (Block if REQUIRED files are missing)
+function validateStrictUploads() {
     const activeDeductionDetails = document.querySelectorAll('.deduction-detail:not(.hidden)');
     let missingItems = [];
 
     activeDeductionDetails.forEach(detail => {
+        // Find inputs that are functionally required (e.g. have 'required' attribute or logic implies it)
         const fileInputs = detail.querySelectorAll('input[type="file"]');
-        // We check all file inputs in active details, primarily those marked upload-required or generally expected
+
         fileInputs.forEach(input => {
-            if (input.files.length === 0) {
-                // Get the label text for this deduction
-                const checkboxCard = detail.previousElementSibling;
-                const deductionName = checkboxCard?.querySelector('span')?.textContent || getFieldLabel(input);
-                if (!missingItems.includes(deductionName)) {
-                    missingItems.push(deductionName);
+            // Check if input is required OR if user selected "Apply" for this deduction
+            // In our logic, if deduction-detail is visible, it means the user checked the deduction.
+            // If the file input has 'required' attribute (set by toggleDeductionDetail), we enforce it.
+            // OR if it has class 'upload-required' (which we added in HTML)
+
+            if (input.hasAttribute('required') || input.classList.contains('upload-required')) {
+                // Check if files are attached
+                if (!input.files || input.files.length === 0) {
+                    const label = getFieldLabel(input);
+                    missingItems.push(label);
+                    input.classList.add('input-error');
                 }
             }
         });
     });
 
-    // 2. Check Withholding Slip (Section D)
+    // Check Withholding Slip if Section (Salary Block) is visible
+    // Note: If skipped via Business Income, salaryBlock might be hidden or effectively skipped.
+    // We must check if we passed through Section D or if simple logic 'is visible' works.
     const salaryBlock = document.getElementById('salaryIncomeBlock');
-    if (salaryBlock && !isHidden(salaryBlock)) {
+    // salaryBlock is in section-d. If we skipped section-d, it is physically hidden (because section-d is hidden).
+    // isHidden check behaves based on current visibility. Review page is active, section-d is hidden.
+    // So isHidden(salaryBlock) is true.
+    // But we need to check if the user *should have* uploaded it.
+    // Logic: If incomeType was '1' or '2', withholding slip is required.
+    const incomeType = document.querySelector('input[name="incomeType"]:checked')?.value;
+    if (incomeType === '1' || incomeType === '2') {
         const withholdingInput = document.getElementById('withholdingSlip');
-        if (withholdingInput && withholdingInput.files.length === 0) {
+        if (withholdingInput && (!withholdingInput.files || withholdingInput.files.length === 0)) {
             missingItems.push('源泉徴収票');
+            withholdingInput.classList.add('input-error');
         }
     }
 
     if (missingItems.length > 0) {
-        const message = '以下の項目について、添付ファイルがアップロードされていません。\nこのまま次へ進みますか？\n\n' +
-            missingItems.map(item => '・' + item).join('\n') +
-            '\n\n（書類なしで進む場合は「OK」、戻ってアップロードする場合は「キャンセル」）';
-
-        if (!confirm(message)) {
-            return false; // User cancelled, stay on page (or we could redirect)
-        }
+        showErrorModal([{
+            field: '添付ファイル不足',
+            message: '以下の必須ファイルがアップロードされていません。',
+            example: missingItems.join('、')
+        }]);
+        return false;
     }
-    return true; // Proceed
+
+    return true;
 }
 
 /* Missing Helper Functions */
