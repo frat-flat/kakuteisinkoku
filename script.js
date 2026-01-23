@@ -2604,7 +2604,9 @@ function removeFile(input, indexToRemove) {
 
 
 // Strict Validation for Review Page (Block if REQUIRED files are missing)
+// Strict Validation for Review Page (Block if REQUIRED files are missing)
 function validateStrictUploads() {
+    // 1. Check Deduction Documents (Section G)
     const activeDeductionDetails = document.querySelectorAll('.deduction-detail:not(.hidden)');
     let missingItems = [];
 
@@ -2614,10 +2616,6 @@ function validateStrictUploads() {
 
         fileInputs.forEach(input => {
             // Check if input is required OR if user selected "Apply" for this deduction
-            // In our logic, if deduction-detail is visible, it means the user checked the deduction.
-            // If the file input has 'required' attribute (set by toggleDeductionDetail), we enforce it.
-            // OR if it has class 'upload-required' (which we added in HTML)
-
             if (input.hasAttribute('required') || input.classList.contains('upload-required')) {
                 // Check if files are attached
                 if (!input.files || input.files.length === 0) {
@@ -2629,35 +2627,33 @@ function validateStrictUploads() {
         });
     });
 
-    // Check Withholding Slip if Section (Salary Block) is visible
-    // Note: If skipped via Business Income, salaryBlock might be hidden or effectively skipped.
-    // We must check if we passed through Section D or if simple logic 'is visible' works.
-    const salaryBlock = document.getElementById('salaryIncomeBlock');
-
-    // Logic: If incomeType was '1' or '2', withholding slip is required? No, only '2'.
-    // 1: Main Job Only -> No withholding needed (per user spec from earlier session: Type 1 skip)
-    // 3: Business Income -> No withholding needed
-
+    // 2. Check Withholding Slip (Section D)
     const incomeEl = document.querySelector('input[name="incomeType"]:checked');
     const incomeType = incomeEl ? incomeEl.value : null;
+    const withholdingInput = document.getElementById('withholdingSlip');
 
-    // Explicitly allow '3' (Business Income) and '1' (Main Job Only) to PASS without checking withholding
+    // Remove any previous error from withholding slip first
+    if (withholdingInput) {
+        withholdingInput.classList.remove('input-error');
+    }
+
+    // Logic: ONLY '2' (Salary + Side Job) requires Withholding Slip.
+    // '1': Main Job Only -> Skipped (User Spec)
+    // '3': Business Income Only -> Skipped
     if (incomeType === '2') {
-        const withholdingInput = document.getElementById('withholdingSlip');
-        // Only check if input exists and is effectively required by logic
         if (withholdingInput && (!withholdingInput.files || withholdingInput.files.length === 0)) {
             missingItems.push('源泉徴収票');
-            if (withholdingInput) withholdingInput.classList.add('input-error');
+            withholdingInput.classList.add('input-error');
         }
     }
 
-    // SAFEGUARD: If Income Type is NOT '2', ensure '源泉徴収票' is NOT in the missing list.
-    // This prevents any accidental inclusion from other loops or logic leaks.
+    // --- NUCLEAR SAFEGUARD (Just in case) ---
+    // If NOT Type 2, ensure '源泉徴収票' is removed from missingItems even if it got in there somehow.
     if (incomeType !== '2') {
-        missingItems = missingItems.filter(item => !item.includes('源泉徴収票'));
-        // Also remove error class from withholding input just in case
-        const withholdingInput = document.getElementById('withholdingSlip');
-        if (withholdingInput) withholdingInput.classList.remove('input-error');
+        missingItems = missingItems.filter(item => {
+            // Use loose matching for safety in case label changes
+            return !item.includes('源泉徴収票');
+        });
     }
 
     if (missingItems.length > 0) {
