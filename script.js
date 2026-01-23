@@ -1,4 +1,4 @@
-// State tracking
+﻿// State tracking
 let currentStepIndex = 0;
 const steps = [
     'section-a', // 0: Basic Info
@@ -2138,7 +2138,7 @@ function collectFormData() {
         if (field.type === 'calculated') {
             if (field.name === '_dependentsSummary') {
                 const depSection = document.getElementById('dependentsContainer');
-                if (isClassHidden(depSection)) {
+                if (isConditionallyHidden(depSection)) {
                     data[field.name] = '[SKIPPED]';
                 } else {
                     // Aggregate dependent inputs
@@ -2173,7 +2173,7 @@ function collectFormData() {
         const firstEl = elements[0];
         // Check Visibility
         // We use the first element to determine visibility of the group
-        if (isClassHidden(firstEl)) {
+        if (isConditionallyHidden(firstEl)) {
             data[field.name] = '[SKIPPED]';
             return;
         }
@@ -2664,23 +2664,3 @@ function validateStrictUploads() {
 
     return true;
 }
- 
- / /   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
- / /   U T I L I T Y :   C o n d i t i o n a l   V i s i b i l i t y   C h e c k   f o r   D a t a   C o l l e c t i o n  
- / /   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  
- / /   T h i s   f u n c t i o n   d e t e r m i n e s   i f   a n   e l e m e n t   i s   h i d d e n   b y   L O G I C   ( e . g . ,   c o n d i t i o n a l   q u e s t i o n s ) ,  
- / /   w h i l e   i g n o r i n g   t h e   v i s i b i l i t y   o f   t h e   p a r e n t   S t e p   ( w h i c h   i s   h i d d e n   d u r i n g   R e v i e w ) .  
- f u n c t i o n   i s C o n d i t i o n a l l y H i d d e n ( e l )   {  
-         c o n s t   h i d d e n P a r e n t   =   e l . c l o s e s t ( ' . h i d d e n ' ) ;  
-         i f   ( ! h i d d e n P a r e n t )   r e t u r n   f a l s e ;  
-  
-         / /   I f   t h e   c l o s e s t   h i d d e n   a n c e s t o r   i s   a   F o r m   S t e p ,   i t   m e a n s   t h e   e l e m e n t   i s  
-         / /   p h y s i c a l l y   h i d d e n   b e c a u s e   w e   a r e   o n   a   d i f f e r e n t   p a g e ,   b u t   L O G I C A L L Y   i t   i s   v a l i d .  
-         i f   ( h i d d e n P a r e n t . c l a s s L i s t . c o n t a i n s ( ' f o r m - s t e p ' ) )   {  
-                 r e t u r n   f a l s e ;  
-         }  
-  
-         / /   O t h e r w i s e ,   i t   i s   h i d d e n   b y   a   c o n d i t i o n a l   g r o u p   o r   i n t e r n a l   l o g i c .  
-         r e t u r n   t r u e ;  
- }  
- 
