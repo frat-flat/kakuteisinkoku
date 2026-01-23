@@ -18,7 +18,7 @@ export default async function handler(req, res) {
         const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
         if (!supabaseUrl || !supabaseKey) {
-            throw new Error(`Environment Configuration Error: SUPABASE_URL=${!!supabaseUrl}, SUPABASE_ANON_KEY=${!!supabaseKey}`);
+            throw new Error(`Environment Configuration Error: SUPABASE_URL=${!!supabaseUrl}, SUPABASE_ANON_KEY=${!!supabaseKey}, ENV=${process.env.VERCEL_ENV}`);
         }
 
         const supabase = createClient(supabaseUrl, supabaseKey);
