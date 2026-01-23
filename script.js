@@ -860,7 +860,12 @@ function nextStep() {
         renderReview();
     } else if (currentId === 'section-review') {
         if (!validateStrictUploads()) return;
-        nextIndex = 9; // Accountant
+        const incomeEl = document.querySelector('input[name="incomeType"]:checked');
+        if (incomeEl && incomeEl.value === '3') {
+            nextIndex = 10; // Skip Accountant, go to Final Consent
+        } else {
+            nextIndex = 9; // Accountant
+        }
     } else if (currentId === 'section-accountant') {
         nextIndex = 10; // Final Consent
     } else {
