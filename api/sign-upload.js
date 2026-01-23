@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase.js';
+import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
     if (req.method === 'OPTIONS') {
@@ -13,6 +13,16 @@ export default async function handler(req, res) {
     }
 
     try {
+        // Initialize Supabase Client dynamically to catch config errors without crashing
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+        if (!supabaseUrl || !supabaseKey) {
+            throw new Error(`Environment Configuration Error: SUPABASE_URL=${!!supabaseUrl}, SUPABASE_ANON_KEY=${!!supabaseKey}`);
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
         const { fileName, fileType } = req.body;
 
         // Sanitize filename and make unique
@@ -40,6 +50,7 @@ export default async function handler(req, res) {
 
     } catch (e) {
         console.error('Upload error:', e);
+        // Returns the actual error message to the browser
         res.status(500).json({ error: e.message });
     }
 }
