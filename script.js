@@ -2264,7 +2264,10 @@ async function confirmSubmit() {
                     })
                 });
 
-                if (!signRes.ok) throw new Error('アップロード用URLの取得に失敗しました');
+                if (!signRes.ok) {
+                    const errorDetail = await signRes.json().catch(() => ({}));
+                    throw new Error('Upload Error: ' + (errorDetail.error || 'Server Internal Error'));
+                }
                 const { signedUrl, publicUrl } = await signRes.json();
 
                 // Upload File to Supabase Storage (PUT)
