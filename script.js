@@ -2785,13 +2785,7 @@ function validateStrictUploads() {
     });
 
     // Check Withholding Slip (Section D)
-    const salaryBlock = document.getElementById('salaryIncomeBlock');
-    if (salaryBlock && !isClassHidden(salaryBlock)) { // Use isClassHidden to be safe
-        const withholdingInput = document.getElementById('withholdingSlip');
-        if (withholdingInput && withholdingInput.files.length === 0) {
-            missingRequired.push('源泉徴収票');
-        }
-    }
+    // Removed: Withholding Slip is optional for ALL types.
 
     if (missingRequired.length > 0) {
         showErrorModal([{
