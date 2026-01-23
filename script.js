@@ -2637,24 +2637,10 @@ function validateStrictUploads() {
         withholdingInput.classList.remove('input-error');
     }
 
-    // Logic: ONLY '2' (Salary + Side Job) requires Withholding Slip.
-    // '1': Main Job Only -> Skipped (User Spec)
-    // '3': Business Income Only -> Skipped
-    if (incomeType === '2') {
-        if (withholdingInput && (!withholdingInput.files || withholdingInput.files.length === 0)) {
-            missingItems.push('源泉徴収票');
-            withholdingInput.classList.add('input-error');
-        }
-    }
+    // Logic: Withholding Slip is optional for ALL types.
+    // Removed strict check for Type 2.
 
-    // --- NUCLEAR SAFEGUARD (Just in case) ---
-    // If NOT Type 2, ensure '源泉徴収票' is removed from missingItems even if it got in there somehow.
-    if (incomeType !== '2') {
-        missingItems = missingItems.filter(item => {
-            // Use loose matching for safety in case label changes
-            return !item.includes('源泉徴収票');
-        });
-    }
+
 
     if (missingItems.length > 0) {
         showErrorModal([{
