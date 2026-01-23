@@ -2620,10 +2620,10 @@ function validateStrictUploads() {
     const incomeEl = document.querySelector('input[name="incomeType"]:checked');
     const incomeType = incomeEl ? incomeEl.value : null;
 
-    // Explicitly allow '3' (Business Income) to PASS without checking withholding
-    if (incomeType === '3') {
+    // Explicitly allow '3' (Business Income) and '1' (Main Job Only) to PASS without checking withholding
+    if (incomeType === '3' || incomeType === '1') {
         // Do not check withholding slip
-    } else if (incomeType === '1' || incomeType === '2') {
+    } else if (incomeType === '2') {
         const withholdingInput = document.getElementById('withholdingSlip');
         if (withholdingInput && (!withholdingInput.files || withholdingInput.files.length === 0)) {
             missingItems.push('源泉徴収票');
