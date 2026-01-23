@@ -1852,7 +1852,9 @@ function renderReview() {
                 if (input.id === 'bankCandidateSelect' || input.id === 'branchCandidateSelect') return;
 
                 // Skip if hidden (e.g. inside unchecked deduction detail)
-                if (isClassHidden(input)) return;
+                // Skip if parent is hidden (e.g. Spouse block when Single)
+                // Use isConditionallyHidden to ignore 'form-step' hidden state (since we are in Review, other steps are hidden but valid)
+                if (isConditionallyHidden(input)) return;
 
                 // For Section G specific labeling logic
                 let label = getFieldLabel(input);
@@ -1928,7 +1930,9 @@ function renderReview() {
 
                 // Skip if parent is hidden (e.g. Spouse block when Single)
                 // Use class-based visibility check
-                if (isClassHidden(input)) return;
+                // Skip if parent is hidden (e.g. Spouse block when Single)
+                // Use isConditionallyHidden to ignore 'form-step' hidden state (since we are in Review, other steps are hidden but valid)
+                if (isConditionallyHidden(input)) return;
 
                 // Label logic already handled above but need to define default label if not set (for non-Section G)
                 // Wait, I defined 'let label = getFieldLabel(input)' at start of loop.
@@ -2604,7 +2608,9 @@ function validateStrictUploads() {
     // So isHidden(salaryBlock) is true.
     // But we need to check if the user *should have* uploaded it.
     // Logic: If incomeType was '1' or '2', withholding slip is required.
-    const incomeType = document.querySelector('input[name="incomeType"]:checked')?.value;
+    const incomeEl = document.querySelector('input[name="incomeType"]:checked');
+    const incomeType = incomeEl ? incomeEl.value : null;
+
     if (incomeType === '1' || incomeType === '2') {
         const withholdingInput = document.getElementById('withholdingSlip');
         if (withholdingInput && (!withholdingInput.files || withholdingInput.files.length === 0)) {
