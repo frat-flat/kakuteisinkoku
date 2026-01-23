@@ -2128,6 +2128,23 @@ const FORM_FIELDS = [
     { name: 'taxMethod', label: '希望申告方法', type: 'radio', map: { 'etax': 'e-Tax', 'paper': '書面', 'undecided': '未定' } }
 ];
 
+// ------------------------------------------------------------------
+// UTILITY: Conditional Visibility Check for Data Collection
+// ------------------------------------------------------------------
+function isConditionallyHidden(el) {
+    const hiddenParent = el.closest('.hidden');
+    if (!hiddenParent) return false;
+
+    // If the closest hidden ancestor is a Form Step, it means the element is
+    // physically hidden because we are on a different page, but LOGICALLY it is valid.
+    if (hiddenParent.classList.contains('form-step')) {
+        return false;
+    }
+
+    // Otherwise, it is hidden by a conditional group or internal logic.
+    return true;
+}
+
 // Replaces original collectFormData
 function collectFormData() {
     const data = {};
