@@ -1929,10 +1929,12 @@ function renderReview() {
                 if (input.type === 'checkbox' && !input.checked) return;
 
                 // Skip if parent is hidden (e.g. Spouse block when Single)
-                // Use class-based visibility check
-                // Skip if parent is hidden (e.g. Spouse block when Single)
                 // Use isConditionallyHidden to ignore 'form-step' hidden state (since we are in Review, other steps are hidden but valid)
-                if (isConditionallyHidden(input)) return;
+                // FORCE SHOW Section A and B regardless of hidden state
+                const alwaysShowSections = ['section-a', 'section-b'];
+                if (!alwaysShowSections.includes(section.id)) {
+                    if (isConditionallyHidden(input)) return;
+                }
 
                 // Label logic already handled above but need to define default label if not set (for non-Section G)
                 // Wait, I defined 'let label = getFieldLabel(input)' at start of loop.
@@ -2611,7 +2613,10 @@ function validateStrictUploads() {
     const incomeEl = document.querySelector('input[name="incomeType"]:checked');
     const incomeType = incomeEl ? incomeEl.value : null;
 
-    if (incomeType === '1' || incomeType === '2') {
+    // Explicitly allow '3' (Business Income) to PASS without checking withholding
+    if (incomeType === '3') {
+        // Do not check withholding slip
+    } else if (incomeType === '1' || incomeType === '2') {
         const withholdingInput = document.getElementById('withholdingSlip');
         if (withholdingInput && (!withholdingInput.files || withholdingInput.files.length === 0)) {
             missingItems.push('源泉徴収票');
