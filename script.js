@@ -1662,12 +1662,24 @@ function handleBankNameInput() {
             let formalName = bank.name;
             const c = parseInt(bank.code, 10);
             if (!isNaN(c)) {
-                if (c >= 1 && c <= 999) formalName += '銀行';
-                else if (c >= 1000 && c <= 1999) formalName += '信用金庫';
-                else if (c >= 2000 && c <= 2999) formalName += '信用組合';
-                else if (c >= 3000 && c <= 3999) formalName += '労働金庫';
-                else if (c >= 5000 && c <= 5999) formalName += '農業協同組合';
-                else if (c === 9900) formalName += '銀行'; // Japan Post but API name is 'ゆうちょ' -> ゆうちょ銀行
+                if (c >= 1 && c <= 999) {
+                    if (!formalName.endsWith('銀行')) formalName += '銀行';
+                }
+                else if (c >= 1000 && c <= 1999) {
+                    if (!formalName.endsWith('信用金庫')) formalName += '信用金庫';
+                }
+                else if (c >= 2000 && c <= 2999) {
+                    if (!formalName.endsWith('信用組合')) formalName += '信用組合';
+                }
+                else if (c >= 3000 && c <= 3999) {
+                    if (!formalName.endsWith('労働金庫')) formalName += '労働金庫';
+                }
+                else if (c >= 5000 && c <= 5999) {
+                    if (!formalName.endsWith('農業協同組合')) formalName += '農業協同組合';
+                }
+                else if (c === 9900) {
+                    if (!formalName.endsWith('銀行')) formalName += '銀行';
+                }
             }
 
             opt.textContent = formalName;
