@@ -862,7 +862,9 @@ function nextStep() {
         if (!validateStrictUploads()) return;
         const incomeEl = document.querySelector('input[name="incomeType"]:checked');
         if (incomeEl && incomeEl.value === '3') {
-            nextIndex = 10; // Skip Accountant, go to Final Consent
+            // Type 3: Skip everything and Submit immediately
+            confirmSubmit();
+            return;
         } else {
             nextIndex = 9; // Accountant
         }
