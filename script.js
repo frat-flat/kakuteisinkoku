@@ -1807,6 +1807,14 @@ function renderReview() {
         // Skip current review section and future sections
         if (section.id === 'section-review' || section.id === 'section-accountant' || section.id === 'section-i' || section.id === 'section-j') return;
 
+        // --- NEW LOGIC FOR TYPE 3 (Skip Loop) ---
+        // If Type 3, we skipped everything after B until Review.
+        // Hiding Section C, F, D, G, H
+        if (incomeType === '3') {
+            const allowedSections = ['section-a', 'section-b'];
+            if (!allowedSections.includes(section.id)) return;
+        }
+
         // Skip logic based on section ID
         if (section.id === 'section-d') { // Salary Income
             // Section D shows "給与所得について".
@@ -2622,13 +2630,15 @@ function validateStrictUploads() {
     const incomeType = incomeEl ? incomeEl.value : null;
 
     // Explicitly allow '3' (Business Income) and '1' (Main Job Only) to PASS without checking withholding
+    // Also ensure we are not accidentally checking it via the generic deduction loop (unlikely but safe)
     if (incomeType === '3' || incomeType === '1') {
         // Do not check withholding slip
     } else if (incomeType === '2') {
         const withholdingInput = document.getElementById('withholdingSlip');
+        // Only check if input exists and is effectively required by logic
         if (withholdingInput && (!withholdingInput.files || withholdingInput.files.length === 0)) {
             missingItems.push('源泉徴収票');
-            withholdingInput.classList.add('input-error');
+            if (withholdingInput) withholdingInput.classList.add('input-error');
         }
     }
 
