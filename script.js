@@ -2603,56 +2603,9 @@ function removeFile(input, indexToRemove) {
 
 
 
-// Strict Validation for Review Page (Block if REQUIRED files are missing)
-// Strict Validation for Review Page (Block if REQUIRED files are missing)
-function validateStrictUploads() {
-    // 1. Check Deduction Documents (Section G)
-    const activeDeductionDetails = document.querySelectorAll('.deduction-detail:not(.hidden)');
-    let missingItems = [];
+// NOTE: validateStrictUploads is defined later in this file (around line 2765).
+// The duplicate definition here has been removed to avoid conflicts.
 
-    activeDeductionDetails.forEach(detail => {
-        // Find inputs that are functionally required (e.g. have 'required' attribute or logic implies it)
-        const fileInputs = detail.querySelectorAll('input[type="file"]');
-
-        fileInputs.forEach(input => {
-            // Check if input is required OR if user selected "Apply" for this deduction
-            if (input.hasAttribute('required') || input.classList.contains('upload-required')) {
-                // Check if files are attached
-                if (!input.files || input.files.length === 0) {
-                    const label = getFieldLabel(input);
-                    missingItems.push(label);
-                    input.classList.add('input-error');
-                }
-            }
-        });
-    });
-
-    // 2. Check Withholding Slip (Section D)
-    const incomeEl = document.querySelector('input[name="incomeType"]:checked');
-    const incomeType = incomeEl ? incomeEl.value : null;
-    const withholdingInput = document.getElementById('withholdingSlip');
-
-    // Remove any previous error from withholding slip first
-    if (withholdingInput) {
-        withholdingInput.classList.remove('input-error');
-    }
-
-    // Logic: Withholding Slip is optional for ALL types.
-    // Removed strict check for Type 2.
-
-
-
-    if (missingItems.length > 0) {
-        showErrorModal([{
-            field: '添付ファイル不足',
-            message: '以下の必須ファイルがアップロードされていません。',
-            example: missingItems.join('、')
-        }]);
-        return false;
-    }
-
-    return true;
-}
 
 /* Missing Helper Functions */
 function validatePhoneNumber(val) {
