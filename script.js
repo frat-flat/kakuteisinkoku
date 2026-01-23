@@ -2621,25 +2621,31 @@ function validateStrictUploads() {
     // Note: If skipped via Business Income, salaryBlock might be hidden or effectively skipped.
     // We must check if we passed through Section D or if simple logic 'is visible' works.
     const salaryBlock = document.getElementById('salaryIncomeBlock');
-    // salaryBlock is in section-d. If we skipped section-d, it is physically hidden (because section-d is hidden).
-    // isHidden check behaves based on current visibility. Review page is active, section-d is hidden.
-    // So isHidden(salaryBlock) is true.
-    // But we need to check if the user *should have* uploaded it.
-    // Logic: If incomeType was '1' or '2', withholding slip is required.
+
+    // Logic: If incomeType was '1' or '2', withholding slip is required? No, only '2'.
+    // 1: Main Job Only -> No withholding needed (per user spec from earlier session: Type 1 skip)
+    // 3: Business Income -> No withholding needed
+
     const incomeEl = document.querySelector('input[name="incomeType"]:checked');
     const incomeType = incomeEl ? incomeEl.value : null;
 
     // Explicitly allow '3' (Business Income) and '1' (Main Job Only) to PASS without checking withholding
-    // Also ensure we are not accidentally checking it via the generic deduction loop (unlikely but safe)
-    if (incomeType === '3' || incomeType === '1') {
-        // Do not check withholding slip
-    } else if (incomeType === '2') {
+    if (incomeType === '2') {
         const withholdingInput = document.getElementById('withholdingSlip');
         // Only check if input exists and is effectively required by logic
         if (withholdingInput && (!withholdingInput.files || withholdingInput.files.length === 0)) {
             missingItems.push('源泉徴収票');
             if (withholdingInput) withholdingInput.classList.add('input-error');
         }
+    }
+
+    // SAFEGUARD: If Income Type is NOT '2', ensure '源泉徴収票' is NOT in the missing list.
+    // This prevents any accidental inclusion from other loops or logic leaks.
+    if (incomeType !== '2') {
+        missingItems = missingItems.filter(item => !item.includes('源泉徴収票'));
+        // Also remove error class from withholding input just in case
+        const withholdingInput = document.getElementById('withholdingSlip');
+        if (withholdingInput) withholdingInput.classList.remove('input-error');
     }
 
     if (missingItems.length > 0) {
