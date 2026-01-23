@@ -7,6 +7,7 @@
     <title>確定申告について | ヨサンダス</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/libphonenumber-js@1.9.44/bundle/libphonenumber-js.min.js"></script>
 </head>
 
 <body>
@@ -75,7 +76,7 @@
 
             <!-- Section C: Contact Info -->
             <section id="section-c" class="form-step">
-                <h2>基本情報の収集</h2>
+                <h2>基本情報の入力</h2>
                 <div class="form-group">
                     <label for="email">メールアドレス <span class="required">必須</span></label>
                     <input type="email" id="email" name="email" required placeholder="example@email.com">
@@ -83,14 +84,14 @@
                 <div class="form-group">
                     <label for="phone">電話番号 <span class="required">必須</span></label>
                     <input type="tel" id="phone" name="phone" required placeholder="090-1234-5678">
-                    <p class="helper-text">※半角ハイフン2つを含めて入力してください（例：090-1234-5678）</p>
+                    <p class="helper-text">※ハイフンは不要です（自動で補完されます）</p>
                 </div>
 
                 <h3>現住所</h3>
                 <div class="form-group">
                     <label for="zipCode">郵便番号 <span class="required">必須</span></label>
-                    <input type="text" id="zipCode" name="zipCode" required placeholder="123-4567">
-                    <p class="helper-text">※半角ハイフンを含めて7桁で入力してください（例：123-4567）</p>
+                    <input type="text" id="zipCode" name="zipCode" required placeholder="123-4567" inputmode="numeric">
+                    <p class="helper-text">※ハイフンは不要です（自動で補完されます）</p>
                 </div>
                 <div class="form-group">
                     <label for="prefecture">都道府県 <span class="required">必須</span></label>
@@ -174,8 +175,8 @@
                     <h4>1月1日時点の住所詳細</h4>
                     <div class="form-group">
                         <label>郵便番号 <span class="required">必須</span></label>
-                        <input type="text" name="jan1Zip" placeholder="123-4567">
-                        <p class="helper-text">※半角ハイフンを含めて7桁で入力してください</p>
+                        <input type="text" name="jan1Zip" placeholder="123-4567" inputmode="numeric">
+                        <p class="helper-text">※ハイフンは不要です（自動で補完されます）</p>
                     </div>
                     <div class="form-group">
                         <label>都道府県 <span class="required">必須</span></label>
@@ -285,10 +286,16 @@
                         <p class="helper-text">e-Taxのログイン時に必要となります。</p>
                     </div>
                     <div class="form-group">
-                        <label>e-Tax暗証番号 <span class="required">必須</span></label>
+                        <label>利用者識別番号パスワード <span class="required">必須</span></label>
                         <div class="password-wrapper">
                             <input type="password" name="etaxPassword" id="etaxPassword" placeholder="英数字8〜50文字"
                                 minlength="8" maxlength="50">
+                        </div>
+                        <label style="margin-top:10px;">利用者識別番号パスワード（確認用） <span class="required">必須</span></label>
+                        <div class="password-wrapper">
+                            <input type="password" name="etaxPasswordConfirm" id="etaxPasswordConfirm"
+                                placeholder="確認のためもう一度入力してください" minlength="8" maxlength="50"
+                                oninput="validateEtaxPasswordMatch()">
                         </div>
                         <p class="helper-text">e-Taxのログイン時に必要となります。</p>
                     </div>
@@ -364,7 +371,7 @@
                         <label>配偶者のマイナンバー <span class="required">必須</span></label>
                         <div class="password-wrapper">
                             <input type="password" id="spouseMyNumber" name="spouseMyNumber" required
-                                placeholder="12桁の数字">
+                                placeholder="12桁の数字（ハイフンなし）">
 
                         </div>
                         <label style="margin-top:10px;">配偶者のマイナンバー（確認用） <span class="required">必須</span></label>
@@ -373,6 +380,7 @@
                                 placeholder="確認のためもう一度入力してください">
 
                         </div>
+                        <p class="helper-text">※12桁の数字のみ入力してください（ハイフン不要）</p>
                     </div>
 
                     <div class="form-group">
@@ -415,9 +423,9 @@
                         style="margin-top: 15px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #6EB5C0;">
                         <h4>配偶者の住所</h4>
                         <div class="form-group">
-                            <label>郵便番号 <span class="required">必須</span> <span class="helper-text">（半角ハイフン入力
-                                    123-4567）</span></label>
+                            <label>郵便番号 <span class="required">必須</span></label>
                             <input type="text" name="spouseZip" placeholder="123-4567" inputmode="numeric">
+                            <p class="helper-text">※ハイフンは不要です（自動で補完されます）</p>
                         </div>
                         <div class="form-group">
                             <label>都道府県 <span class="required">必須</span></label>
@@ -570,14 +578,14 @@
                     </div>
                     <div class="form-group">
                         <label class="file-label">源泉徴収票のアップロード <span class="required">必須</span></label>
-                        <input type="file" id="withholdingSlip" name="withholdingSlip">
+                        <input type="file" id="withholdingSlip" name="withholdingSlip" class="upload-required">
                     </div>
                     <div class="form-group">
-                        <p class="question-label">年末調整済みですか？</p>
+                        <p class="question-label">年末調整済みですか？<span class="required">必須</span></p>
                         <div class="radio-group-horizontal">
-                            <label><input type="radio" name="yearEndAdj" value="yes"> はい</label>
-                            <label><input type="radio" name="yearEndAdj" value="no"> いいえ</label>
-                            <label><input type="radio" name="yearEndAdj" value="unknown"> 不明</label>
+                            <label><input type="radio" name="yearEndAdj" value="yes" required> はい</label>
+                            <label><input type="radio" name="yearEndAdj" value="no" required> いいえ</label>
+                            <label><input type="radio" name="yearEndAdj" value="unknown" required> 不明</label>
                         </div>
                     </div>
                 </div>
@@ -603,7 +611,7 @@
                         </label>
                         <div id="detail-medical" class="deduction-detail hidden">
                             <label>医療費総額（概算）</label>
-                            <input type="number" placeholder="円">
+                            <input type="number" name="medicalExpenses" placeholder="円">
                             <label>医療費通知の有無</label>
                             <div class="radio-group-horizontal">
                                 <label><input type="radio" name="medicalNotice" value="yes"> あり</label>
@@ -618,7 +626,7 @@
                         </label>
                         <div id="detail-furusato" class="deduction-detail hidden">
                             <label>寄附先の数</label>
-                            <input type="number" placeholder="ヶ所">
+                            <input type="number" name="furusatoCount" placeholder="ヶ所">
                             <label>ワンストップ特例の利用</label>
                             <div class="radio-group-horizontal">
                                 <label><input type="radio" name="onestop" value="yes"> 利用する</label>
@@ -680,7 +688,7 @@
                         </label>
                         <div id="detail-other" class="deduction-detail hidden">
                             <label>内容</label>
-                            <textarea placeholder="詳細を入力してください"></textarea>
+                            <textarea name="otherDeductionDetail" placeholder="詳細を入力してください"></textarea>
                         </div>
                     </div>
                 </div>
@@ -696,7 +704,7 @@
                 <div class="form-group">
                     <label>銀行名 <span class="required">必須</span></label>
                     <div class="banking-input-container">
-                        <input type="text" name="bankNameSearch" id="bankNameSearch" placeholder="銀行名を入力（候補表示）"
+                        <input type="text" name="bankNameSearch" id="bankNameSearch" required placeholder="銀行名を入力（候補表示）"
                             oninput="handleBankNameInput()" onfocus="handleBankNameInput()" autocomplete="off">
                         <!-- Hidden real code selection -->
                         <input type="hidden" name="bankCode" id="bankCode">
@@ -712,9 +720,9 @@
                     <label>支店名・支店コード <span class="required">必須</span></label>
                     <div class="banking-input-container">
                         <div style="display:flex; gap:10px;">
-                            <input type="text" name="branchCodeInput" id="branchCodeInput" placeholder="店番(3桁)"
+                            <input type="text" name="branchCodeInput" id="branchCodeInput" required placeholder="店番(3桁)"
                                 style="width: 100px;" maxlength="3" oninput="handleBranchCodeInput()" disabled>
-                            <input type="text" name="branchNameInput" id="branchNameInput" placeholder="支店名を入力"
+                            <input type="text" name="branchNameInput" id="branchNameInput" required placeholder="支店名を入力"
                                 style="flex-grow:1;" oninput="handleBranchNameInput()" disabled>
                         </div>
                         <!-- Candidate Select -->

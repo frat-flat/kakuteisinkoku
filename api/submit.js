@@ -17,46 +17,62 @@ export default async function handler(req, res) {
     try {
         const formData = req.body;
 
+        // -------------------------------------------------------------
+        // 1. Prepare Data for Supabase (Sanitize)
+        // -------------------------------------------------------------
+        // Supabase specific fields need to be null if '[SKIPPED]' or empty
+        // We iterate the incoming formData and create a clean version
+        const dbData = {};
+        Object.keys(formData).forEach(key => {
+            const val = formData[key];
+            if (val === '[SKIPPED]' || val === '') {
+                dbData[key] = null;
+            } else {
+                dbData[key] = val;
+            }
+        });
+
         // データベースに保存
         const { data, error } = await supabase
             .from('submissions')
             .insert([{
                 // 基本情報
-                name: formData.name || null,
-                name_kana: formData.nameKana || null,
-                dob: formData.dob || null,
-                zip: formData.zip || null,
-                address: formData.address || null,
-                phone: formData.phone || null,
-                email: formData.email || null,
+                name: dbData.fullName || null,
+                name_kana: dbData.fullNameKana || null,
+                dob: dbData.dob || null,
+                zip: dbData.zipCode || null,
+                address: (dbData.prefecture || '') + (dbData.address1 || '') + (dbData.address2 || ''), // Combine for legacy DB field if needed, or store separate
+                phone: dbData.phone || null,
+                email: dbData.email || null,
 
                 // 収入・申告情報
-                income_type: formData.incomeType || null,
-                blue_return: formData.blueReturn || null,
-                past_filing: formData.pastFiling || null,
-                etax_id: formData.etaxId || null,
+                income_type: dbData.incomeType || null,
+                blue_return: dbData.blueReturn || null,
+                past_filing: dbData.pastFiling || null,
+                etax_id: dbData.etaxId || null,
 
                 // 世帯・家族情報
-                head_of_household: formData.headOfHousehold || null,
-                relation_to_head: formData.relationToHead || null,
-                marital_status: formData.maritalStatus || null,
-                spouse_name: formData.spouseName || null,
-                spouse_as_dependent: formData.spouseAsDependent || null,
-                has_dependents: formData.hasDependents || null,
-                dependent_count: formData.dependentCount ? parseInt(formData.dependentCount) : null,
+                head_of_household: dbData.isHead || null,
+                relation_to_head: dbData.headRelation || null,
+                marital_status: dbData.maritalStatus || null,
+                spouse_name: dbData.spouseName || null,
+                spouse_as_dependent: dbData.spouseAsDependent || null,
+                has_dependents: dbData.hasDependents || null,
+                // Parse int only if valid number
+                dependent_count: (dbData.dependentCount && !isNaN(dbData.dependentCount)) ? parseInt(dbData.dependentCount) : null,
 
                 // 控除情報
-                furusato_nozei: formData.furusatoNozei || null,
-                medical_expenses: formData.medicalExpenses || null,
+                furusato_nozei: dbData.furusatoCount ? 'あり' : null, // Simplification for DB legacy column
+                medical_expenses: dbData.medicalExpenses || null,
 
                 // 銀行情報
-                account_type: formData.accountType || null,
-                bank_name: formData.bankName || null,
-                branch_name: formData.branchName || null,
-                account_number: formData.accountNumber || null,
-                account_holder: formData.accountHolder || null,
+                account_type: dbData.accountType || null,
+                bank_name: dbData.bankName || null,
+                branch_name: dbData.branchName || null,
+                account_number: dbData.accountNumber || null,
+                account_holder: dbData.accountHolder || null,
 
-                // 全データをJSON形式で保存
+                // 全データをJSON形式で保存 (This is important for full backup)
                 full_form_data: formData
             }])
             .select();
@@ -66,53 +82,18 @@ export default async function handler(req, res) {
             throw error;
         }
 
-        // --- Google Sheets Integration (GAS) ---
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbyUUqUHtKhD2eUa6y_E1nilcqWuuitGpGQN5JpysfQQCTyWE_txFddcOaXsxSVkA70Q/exec';
+        // -------------------------------------------------------------
+        // 2. Google Sheets Integration (GAS)
+        // -------------------------------------------------------------
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzdLj5dqxg6Xqegl8b36lH41iSzevOIqfFUvliRxLJ0_-NCDbriyTyocEY93brWg0cx/exec';
 
         try {
-            // Transform data for GAS if needed, or send as is
-            // GAS expects: { name, name_kana, etc... } matching the keys used in doPost
-            // We use the flat fields we just prepared for Supabase insert, plus full_form_data for backup
-
-            const gasPayload = {
-                // Using the same keys as the rowData mapping in GAS
-                name: formData.name,
-                name_kana: formData.nameKana,
-                dob: formData.dob,
-                zip: formData.zip,
-                address: formData.address,
-                phone: formData.phone,
-                email: formData.email,
-
-                income_type: formData.incomeType,
-                blue_return: formData.blueReturn,
-                past_filing: formData.pastFiling,
-                etax_id: formData.etaxId,
-
-                head_of_household: formData.headOfHousehold,
-                relation_to_head: formData.relationToHead,
-                marital_status: formData.maritalStatus,
-                spouse_name: formData.spouseName,
-                spouse_as_dependent: formData.spouseAsDependent,
-                has_dependents: formData.hasDependents,
-                dependent_count: formData.dependentCount,
-
-                furusato_nozei: formData.furusatoNozei,
-                medical_expenses: formData.medicalExpenses,
-
-                account_type: formData.accountType,
-                bank_name: formData.bankName,
-                branch_name: formData.branchName,
-                account_number: formData.accountNumber,
-                account_holder: formData.accountHolder,
-
-                full_form_data: formData
-            };
-
+            // We send the ORIGINALLY collected formData which contains '[SKIPPED]'
+            // GAS will handle the formatting to '-'
             await fetch(GAS_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(gasPayload)
+                body: JSON.stringify(formData)
             });
 
         } catch (gasError) {

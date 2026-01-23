@@ -70,6 +70,119 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFileUploads();
 });
 
+// Format Phone Number on Blur
+// Format Phone Number on Blur
+function formatPhone(input) {
+    let val = input.value.trim().replace(/[^\d]/g, '');
+    if (!val) return;
+
+    // Use libphonenumber-js if available
+    if (typeof libphonenumber !== 'undefined') {
+        try {
+            // Parse as JP number
+            const phoneNumber = libphonenumber.parsePhoneNumber(val, 'JP');
+            if (phoneNumber) {
+                // Determine format
+                // National format is usually 03-1234-5678
+                const formatted = phoneNumber.format('NATIONAL');
+                input.value = formatted;
+                input.classList.remove('input-error');
+                return;
+            }
+        } catch (e) {
+            // Fallback if strictly invalid but maybe typable?
+            // Just leave it or try manual fallback
+            console.log('Phone format error', e);
+        }
+    }
+
+    // Manual Fallback if library missing or fails
+    if ((val.length === 10 || val.length === 11) && val.startsWith('0')) {
+        if (val.length === 11) {
+            input.value = `${val.substring(0, 3)}-${val.substring(3, 7)}-${val.substring(7)}`;
+        } else {
+            // Basic fallback without area code logic
+            input.value = `${val.substring(0, 3)}-${val.substring(3, 6)}-${val.substring(6)}`;
+        }
+    }
+}
+
+// Handle Zip Input (Auto-address)
+// Format Zip on Blur
+function formatZip(input) {
+    let val = input.value.replace(/[^\d]/g, '');
+    if (val.length === 7) {
+        input.value = `${val.substring(0, 3)}-${val.substring(3)}`;
+        input.classList.remove('input-error');
+    }
+}
+
+// Handle Zip Input (Auto-address)
+async function handleZipInput(input) {
+    // 1. Get raw digits for API
+    let val = input.value.replace(/[^\d]/g, '');
+
+    // 2. Clear previous errors (if typing)
+    if (val.length > 0) {
+        input.classList.remove('input-error');
+        const existingError = input.parentNode.querySelector('.inline-error-message');
+        if (existingError) existingError.textContent = '';
+    }
+
+    // 3. API Call on 7 digits
+    if (val.length === 7) {
+        // Determine target fields
+        let prefInput = null;
+        let cityInput = null;
+
+        const name = input.name;
+
+        if (name === 'zipCode') {
+            prefInput = document.querySelector('#prefecture');
+            cityInput = document.querySelector('#address1');
+        } else if (name === 'jan1Zip') {
+            prefInput = document.querySelector('[name="jan1Pref"]');
+            cityInput = document.querySelector('[name="jan1City"]');
+        } else if (name === 'spouseZip') {
+            prefInput = document.querySelector('[name="spousePref"]');
+            cityInput = document.querySelector('[name="spouseCity"]');
+        } else if (name.startsWith('depZip_')) {
+            const suffix = name.split('_')[1];
+            prefInput = document.querySelector(`[name="depPref_${suffix}"]`);
+            cityInput = document.querySelector(`[name="depCity_${suffix}"]`);
+        }
+
+        if (!prefInput || !cityInput) return;
+
+        try {
+            const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${val}`);
+            const data = await res.json();
+
+            if (data && data.results) {
+                const result = data.results[0];
+                const pref = result.address1;
+                const addr = result.address2 + result.address3;
+
+                prefInput.value = pref;
+                cityInput.value = addr;
+
+                prefInput.classList.remove('input-error');
+                cityInput.classList.remove('input-error');
+
+                // Auto-format the zip input now that we have success
+                input.value = `${val.substring(0, 3)}-${val.substring(3)}`;
+            } else {
+                if (data.status === 200 && data.results === null) {
+                    alert('入力された郵便番号は存在しません。正しい番号を確認してください。');
+                    input.classList.add('input-error');
+                }
+            }
+        } catch (e) {
+            console.error('Address fetch failed', e);
+        }
+    }
+}
+
 function initAutoSave() {
     // Load saved data with confirmation
     const savedData = localStorage.getItem('taxReturnFormData');
@@ -210,6 +323,9 @@ async function initBankingData() {
 // Setup input listeners for Enter key and blur validation
 function setupInputListeners() {
     document.querySelectorAll('input, select').forEach(input => {
+        if (input.dataset.listenersAttached === 'true') return;
+        input.dataset.listenersAttached = 'true';
+
         // Enter key to move to next field
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -228,7 +344,7 @@ function setupInputListeners() {
                 // 1. Normalize Alphanumeric (Full -> Half) for specific fields
                 // Fields: Zip, Phone, MyNumber, AccountNumber, Email, Income
                 if (input.name.includes('zip') || input.name.includes('phone') || input.name.includes('Phone') ||
-                    input.name.includes('myNumber') || input.name.includes('Money') ||
+                    input.name.toLowerCase().includes('mynumber') || input.name.includes('Money') ||
                     input.name === 'accountNumber' || input.name === 'incomeAmount') {
                     input.value = toHalfWidth(val);
                 }
@@ -247,22 +363,30 @@ function setupInputListeners() {
                 }
             });
         }
+
+        // Feature: Phone Formatting
+        if (input.name.toLowerCase().includes('phone') || input.type === 'tel') {
+            input.addEventListener('blur', () => formatPhone(input));
+        }
+
+        // Feature: Zip Code Auto-fill & Format
+        if (input.name.toLowerCase().includes('zip')) {
+            input.addEventListener('input', () => handleZipInput(input));
+            input.addEventListener('blur', () => formatZip(input));
+        }
+        // Feature: MyNumber Confirmation Match
+        if (input.name.toLowerCase().includes('mynumberconfirm')) {
+            input.addEventListener('input', () => {
+                // Heuristic: Remove 'Confirm' from ID or Name to find original
+                let originalId = input.id.replace('Confirm', '');
+                validateMyNumberMatch(originalId, input.id);
+            });
+        }
     });
 
-    // Instant My Number Validation
-    const myNumConf = document.getElementById('myNumberConfirm');
-    if (myNumConf) {
-        myNumConf.addEventListener('input', () => {
-            validateMyNumberMatch('myNumber', 'myNumberConfirm');
-        });
-    }
+    // Instant My Number Validation - DEPRECATED: Handled dynamically above
+    // Code removed to prevent duplication and allow dynamic fields to work automatically
 
-    const spMyNumConf = document.getElementById('spouseMyNumberConfirm');
-    if (spMyNumConf) {
-        spMyNumConf.addEventListener('input', () => {
-            validateMyNumberMatch('spouseMyNumber', 'spouseMyNumberConfirm');
-        });
-    }
 }
 
 function validateMyNumberMatch(originalId, confirmId) {
@@ -284,7 +408,7 @@ function validateMyNumberMatch(originalId, confirmId) {
     if (confirm.value && original.value) {
         if (confirm.value.length === 12 && original.value.length === 12) {
             if (confirm.value !== original.value) {
-                errorSpan.textContent = '入力されたマイナンバーと一致しません';
+                errorSpan.textContent = '入力されたマイナンバーと一致しません（入力内容をリセットしました）';
                 confirm.classList.add('input-error');
                 // Reset both values as requested
                 confirm.value = '';
@@ -296,6 +420,43 @@ function validateMyNumberMatch(originalId, confirmId) {
         } else {
             errorSpan.textContent = '';
             confirm.classList.remove('input-error');
+        }
+    }
+}
+
+function validateEtaxPasswordMatch() {
+    const original = document.getElementById('etaxPassword');
+    const confirm = document.getElementById('etaxPasswordConfirm');
+    const errorSpanId = 'etaxPasswordConfirm-error';
+
+    if (!original || !confirm) return;
+
+    let errorSpan = document.getElementById(errorSpanId);
+    if (!errorSpan) {
+        errorSpan = document.createElement('div');
+        errorSpan.id = errorSpanId;
+        errorSpan.className = 'inline-error-message';
+        errorSpan.style.color = 'red';
+        errorSpan.style.fontSize = '12px';
+        errorSpan.style.marginTop = '4px';
+        confirm.closest('.password-wrapper').after(errorSpan);
+    }
+
+    if (confirm.value && original.value) {
+        // Trigger check when confirm length catches up to original
+        if (confirm.value.length >= original.value.length) {
+            if (confirm.value !== original.value) {
+                errorSpan.textContent = 'パスワードが一致しません（リセットします）';
+                confirm.classList.add('input-error');
+                // Reset both values as requested
+                confirm.value = '';
+                original.value = '';
+            } else {
+                errorSpan.textContent = '';
+                confirm.classList.remove('input-error');
+            }
+        } else {
+            errorSpan.textContent = '';
         }
     }
 }
@@ -361,8 +522,9 @@ function validateSingleInput(input) {
         input.classList.add('input-error');
         showErrorModal([error]);
 
-        // Auto-clear My Number fields if error occurs
-        if (input.name.includes('myNumber') || input.name.includes('MyNumber')) {
+        // Auto-clear sensitive fields if error occurs (My Number, Passwords)
+        if (input.name.includes('myNumber') || input.name.includes('MyNumber') ||
+            input.type === 'password' || input.name.toLowerCase().includes('password')) {
             input.value = '';
         }
         return false;
@@ -381,13 +543,13 @@ function getInputError(input) {
         }
     }
 
-    // Zip Code: Strictly WITH hyphen
-    if ((input.name === 'zipCode' || input.name === 'jan1Zip') && input.value) {
-        const formatRegex = /^\d{3}-\d{4}$/;
-        if (!formatRegex.test(input.value)) {
+    // Zip Code: 7 digits (Hyphens allowed for display, but main check is digits)
+    if ((input.name.toLowerCase().includes('zip')) && input.value) {
+        // Allow strictly "1234567" OR "123-4567"
+        if (!/^\d{7}$/.test(input.value) && !/^\d{3}-\d{4}$/.test(input.value)) {
             return {
                 field: '郵便番号',
-                message: '半角ハイフンを含む7桁の番号で入力してください',
+                message: '郵便番号は7桁の半角数字（例: 123-4567 または 1234567）で入力してください',
                 example: '123-4567'
             };
         }
@@ -398,9 +560,9 @@ function getInputError(input) {
         if (kataErr) return kataErr;
     }
 
-    // My Number: Strictly NO hyphen, 12 digits
-
-    if ((input.name === 'myNumber' || input.name === 'spouseMyNumber') && input.value) {
+    // Generic MyNumber Validation (Personal, Spouse, Dependent)
+    // Exclude 'Confirm' fields from this length check, they are checked for match
+    if (input.name.toLowerCase().includes('mynumber') && !input.name.toLowerCase().includes('confirm') && input.value) {
         if (!/^\d{12}$/.test(input.value)) {
             return {
                 field: 'マイナンバー',
@@ -410,38 +572,18 @@ function getInputError(input) {
         }
     }
 
-    // My Number Confirmation Match
-    if (input.name === 'myNumberConfirm') {
-        const original = document.getElementById('myNumber');
+    // Generic MyNumber Confirmation Match
+    if (input.name.toLowerCase().includes('mynumberconfirm') && input.value) {
+        // Heuristic: Remove 'Confirm' from ID or Name to find original
+        // e.g. depMyNumberConfirm_1 -> depMyNumber_1
+        let originalId = input.id.replace('Confirm', '');
+        let original = document.getElementById(originalId);
+
         if (original && original.value !== input.value) {
             return {
                 field: 'マイナンバー（確認）',
                 message: '入力されたマイナンバーと一致しません',
                 example: '正しい番号を再入力してください'
-            };
-        }
-    }
-
-    // Dependent Zip Code Validation
-    if (input.name.startsWith('depZip_') && input.value) {
-        const formatRegex = /^\d{3}-\d{4}$/;
-        if (!formatRegex.test(input.value)) {
-            return {
-                field: '郵便番号（扶養）',
-                message: '半角ハイフンを含む7桁の番号で入力してください',
-                example: '123-4567'
-            };
-        }
-    }
-
-    // Spouse Zip Code Validation
-    if (input.name === 'spouseZip' && input.value) {
-        const formatRegex = /^\d{3}-\d{4}$/;
-        if (!formatRegex.test(input.value)) {
-            return {
-                field: '郵便番号（配偶者）',
-                message: '半角ハイフンを含む7桁の番号で入力してください',
-                example: '123-4567'
             };
         }
     }
@@ -520,14 +662,14 @@ function getInputError(input) {
 function validatePhoneNumber(val) {
     const field = '電話番号';
 
-    // Remove all spaces
-    val = val.replace(/\s/g, '');
+    // Remove all spaces and hyphens to check plain digits
+    const digits = val.replace(/[\s-]/g, '');
 
     // Check if empty
-    if (!val) return null;
+    if (!digits) return null;
 
-    // Check for non-numeric characters (except hyphen)
-    if (/[^\d\-]/.test(val)) {
+    // Check for non-numeric characters
+    if (/[^\d]/.test(digits)) {
         return {
             field: field,
             message: '半角数字とハイフン（-）のみで入力してください',
@@ -535,77 +677,45 @@ function validatePhoneNumber(val) {
         };
     }
 
-    // Must start with 0
-    if (!val.startsWith('0')) {
+    // Length check and Prefix check
+    let isValid = false;
+
+    if (digits.length === 10) {
+        // Fixed landline: Must start with 0
+        if (digits.startsWith('0')) {
+            isValid = true;
+        }
+    } else if (digits.length === 11) {
+        // Mobile/IP: Must start with specific prefixes
+        const allowedPrefixes = ['090', '080', '070', '050'];
+        if (allowedPrefixes.some(prefix => digits.startsWith(prefix))) {
+            isValid = true;
+        }
+    }
+
+    // Special check for Banking Step (section-h)
+    if (activeStep.id === 'section-h') {
+        const realBranchCode = document.getElementById('realBranchCode').value;
+        const branchNameInput = document.getElementById('branchNameInput');
+
+        // If branch name is entered but no real code (meaning not selected from list or invalid)
+        if (branchNameInput.value && !realBranchCode) {
+            isValid = false;
+            branchNameInput.classList.add('input-error');
+            errorDetails.push({
+                field: '支店名・支店コード',
+                message: '正しい支店を選択してください',
+                example: '候補リストから選択するか、正しい店番を入力してください'
+            });
+        }
+    }
+
+    if (!isValid) {
         return {
             field: field,
-            message: '電話番号は0から始まる必要があります',
+            message: '電話番号の形式が正しくありません。\n10桁（0から開始）または11桁（090, 080, 070, 050から開始）で入力してください。',
             example: '携帯: 090-1234-5678 / 固定: 03-1234-5678'
         };
-    }
-
-    // Count hyphens
-    const hyphenCount = (val.match(/-/g) || []).length;
-    if (hyphenCount !== 2) {
-        return {
-            field: field,
-            message: 'ハイフンは2つ必要です（市外局番-市内局番-加入者番号）',
-            example: '携帯: 090-1234-5678 / 固定: 03-1234-5678'
-        };
-    }
-
-    // Get digits only
-    const digits = val.replace(/-/g, '');
-
-    // Check for mobile number patterns (070, 080, 090)
-    if (/^0[789]0/.test(digits)) {
-        // Mobile must be exactly 11 digits
-        if (digits.length !== 11) {
-            return {
-                field: field,
-                message: '携帯電話番号は11桁である必要があります（ハイフン除く）',
-                example: '090-1234-5678, 080-1234-5678, 070-1234-5678'
-            };
-        }
-
-        // Mobile format: 0X0-XXXX-XXXX
-        const mobileRegex = /^0[789]0-\d{4}-\d{4}$/;
-        if (!mobileRegex.test(val)) {
-            return {
-                field: field,
-                message: '携帯電話番号のハイフン位置が不正です',
-                example: '090-1234-5678（3桁-4桁-4桁）'
-            };
-        }
-    }
-    // Fixed line numbers
-    else {
-        // Fixed line: 10 digits
-        if (digits.length !== 10) {
-            return {
-                field: field,
-                message: '固定電話番号は10桁である必要があります（ハイフン除く）',
-                example: '03-1234-5678, 06-1234-5678, 045-123-4567'
-            };
-        }
-
-        // Valid fixed line formats:
-        // 0X-XXXX-XXXX (Tokyo 03, Osaka 06)
-        // 0XX-XXX-XXXX (e.g., 045-123-4567)
-        // 0XXX-XX-XXXX (e.g., 0123-45-6789)
-        const fixedRegex1 = /^0\d-\d{4}-\d{4}$/;  // 03-1234-5678
-        const fixedRegex2 = /^0\d{2}-\d{3}-\d{4}$/;  // 045-123-4567
-        const fixedRegex3 = /^0\d{3}-\d{2}-\d{4}$/;  // 0123-45-6789
-        const fixedRegex4 = /^0\d{4}-\d{1}-\d{4}$/;  // 01234-5-6789
-
-        if (!fixedRegex1.test(val) && !fixedRegex2.test(val) &&
-            !fixedRegex3.test(val) && !fixedRegex4.test(val)) {
-            return {
-                field: field,
-                message: '固定電話番号のハイフン位置が不正です',
-                example: '03-1234-5678, 045-123-4567, 0123-45-6789'
-            };
-        }
     }
 
     return null; // Valid
@@ -749,6 +859,7 @@ function nextStep() {
         nextIndex = 8; // Review
         renderReview();
     } else if (currentId === 'section-review') {
+        if (!validateStrictUploads()) return;
         nextIndex = 9; // Accountant
     } else if (currentId === 'section-accountant') {
         nextIndex = 10; // Final Consent
@@ -814,6 +925,9 @@ function validateCurrentStep() {
 
         // Skip radios (handled separately)
         if (input.type === 'radio') continue;
+
+        // Skip file inputs (validated only at the end)
+        if (input.type === 'file') continue;
 
         // Required check
         if (input.required && !input.value.trim()) {
@@ -1271,32 +1385,19 @@ function addDependent() {
             </div>
         </div>
 
-        <div class="form-group">
-            <label>マイナンバー <span class="required">必須</span></label>
-            <div class="password-wrapper">
-                 <input type="password" name="depMyNumber_${count}" id="depMyNumber_${count}" required placeholder="12桁の数字">
-            </div>
-        </div>
-        <div class="form-group">
-            <label>マイナンバー（確認） <span class="required">必須</span></label>
-             <div class="password-wrapper">
-                <input type="password" name="depMyNumberConfirm_${count}" id="depMyNumberConfirm_${count}" required placeholder="もう一度入力してください" oninput="validateMyNumberMatch('depMyNumber_${count}', 'depMyNumberConfirm_${count}')">
-            </div>
-        </div>
-
-
-        <div class="dependent-address-block hidden" style="margin-top: 15px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #6EB5C0;">
+        <div class="dependent-address-block hidden" style="margin-top: 15px; margin-bottom: 20px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #6EB5C0;">
             <h4>別居親族の住所</h4>
             <div class="form-group">
-                <label>郵便番号 <span class="required">必須</span> <span class="helper-text">（半角ハイフン 123-4567）</span></label>
-                <input type="text" name="depZip_${count}" placeholder="123-4567" inputmode="numeric" onblur="validateZip(this)">
+                <label>郵便番号 <span class="required">必須</span></label>
+                <input type="text" name="depZip_${count}" placeholder="123-4567" inputmode="numeric">
+                <p class="helper-text">※ハイフンは不要です（自動で補完されます）</p>
             </div>
             <div class="form-group">
                 <label>都道府県 <span class="required">必須</span></label>
                 <select name="depPref_${count}">
                     <option value="">選択してください</option>
                     <option value="北海道">北海道</option>
-                     <option value="青森県">青森県</option>
+                    <option value="青森県">青森県</option>
                     <option value="岩手県">岩手県</option>
                     <option value="宮城県">宮城県</option>
                     <option value="秋田県">秋田県</option>
@@ -1353,6 +1454,23 @@ function addDependent() {
                 <input type="text" name="depBuilding_${count}" placeholder="建物名・部屋番号">
             </div>
         </div>
+
+        <div class="form-group">
+            <label>マイナンバー <span class="required">必須</span></label>
+            <div class="password-wrapper">
+                 <input type="password" name="depMyNumber_${count}" id="depMyNumber_${count}" required placeholder="12桁の数字（ハイフンなし）">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>マイナンバー（確認） <span class="required">必須</span></label>
+             <div class="password-wrapper">
+                <input type="password" name="depMyNumberConfirm_${count}" id="depMyNumberConfirm_${count}" required placeholder="確認のためもう一度入力してください">
+            </div>
+            <p class="helper-text">※12桁の数字のみ入力してください（ハイフン不要）</p>
+        </div>
+
+
+
 
         <button type="button" class="btn-secondary" onclick="removeDependent(this)">削除</button>
     `;
@@ -1448,12 +1566,39 @@ function toggleSpouseAddress(isSeparate) {
     if (isSeparate) {
         block.classList.remove('hidden');
         inputs.forEach(input => {
-            input.required = true;
+            // Building name is optional
+            if (input.name && !input.name.includes('Building')) {
+                input.required = true;
+            }
         });
     } else {
         block.classList.add('hidden');
         clearHiddenInputs(block);
         inputs.forEach(input => {
+            input.required = false;
+        });
+    }
+}
+
+function toggleDepAddress(radio, isSeparate) {
+    const addressBlock = radio.closest('.form-group').nextElementSibling;
+    if (!addressBlock || !addressBlock.classList.contains('dependent-address-block')) return;
+
+    const inputs = addressBlock.querySelectorAll('input, select');
+
+    if (isSeparate) {
+        addressBlock.classList.remove('hidden');
+        inputs.forEach(input => {
+            // Building name is optional
+            if (input.name && !input.name.includes('Building')) {
+                input.required = true;
+            }
+        });
+    } else {
+        addressBlock.classList.add('hidden');
+        // Clear values when hiding
+        inputs.forEach(input => {
+            input.value = '';
             input.required = false;
         });
     }
@@ -1475,18 +1620,26 @@ function handleBankNameInput() {
     // Show all banks if input is empty on focus, otherwise filter
     const showAll = !val;
 
-    // Filter banks
-    // If showAll is true, return all banks (limited); otherwise filter
+    // Filter banks (Prefix Match Only)
     let candidates;
     if (showAll) {
-        candidates = Object.values(window.REAL_BANKS).slice(0, 20); // Limit initial list
+        // Don't show "All" if user wants "Only matching".
+        // But "Unentered -> None" requested.
+        // So showAll should return EMPTY candidates.
+        candidates = [];
     } else {
         candidates = Object.values(window.REAL_BANKS).filter(bank => {
             const bName = bank.name || '';
             const bKana = bank.kana || '';
             const bHira = bank.hira || '';
-            const bRoma = bank.roma || '';
-            return bName.includes(val) || bKana.includes(val) || bHira.includes(val) || bRoma.toLowerCase().includes(val.toLowerCase());
+            const bRoma = (bank.roma || '').toLowerCase();
+            const v = val.toLowerCase();
+
+            // Prefix match checks
+            return bName.startsWith(val) ||
+                bKana.startsWith(val) ||
+                bHira.startsWith(val) ||
+                bRoma.startsWith(v);
         });
     }
 
@@ -1495,8 +1648,21 @@ function handleBankNameInput() {
         candidates.forEach(bank => {
             const opt = document.createElement('option');
             opt.value = bank.code;
-            opt.textContent = bank.name;
-            opt.dataset.name = bank.name;
+
+            // Generate Formal Name
+            let formalName = bank.name;
+            const c = parseInt(bank.code, 10);
+            if (!isNaN(c)) {
+                if (c >= 1 && c <= 999) formalName += '銀行';
+                else if (c >= 1000 && c <= 1999) formalName += '信用金庫';
+                else if (c >= 2000 && c <= 2999) formalName += '信用組合';
+                else if (c >= 3000 && c <= 3999) formalName += '労働金庫';
+                else if (c >= 5000 && c <= 5999) formalName += '農業協同組合';
+                else if (c === 9900) formalName += '銀行'; // Japan Post but API name is 'ゆうちょ' -> ゆうちょ銀行
+            }
+
+            opt.textContent = formalName;
+            opt.dataset.name = formalName;
             select.appendChild(opt);
         });
         select.style.display = 'block';
@@ -1653,8 +1819,23 @@ function renderReview() {
         if (header) {
             let sectionContent = '';
 
-            // Check if section itself is "hidden" by class (though inactive steps are hidden by default)
-            // We rely on the inputs being filled.
+            // Header Override for Section G
+            const headerText = (section.id === 'section-g') ? '適用する控除' : header.textContent;
+
+            // Unique handling for Deductions (Section G) summary
+            if (section.id === 'section-g') {
+                const checkedDeductions = Array.from(section.querySelectorAll('input[name="deductions"]:checked'))
+                    .map(cb => {
+                        const span = cb.nextElementSibling;
+                        return span ? span.textContent.trim() : cb.value;
+                    });
+
+                if (checkedDeductions.length > 0) {
+                    sectionContent += `<tr><th>選択した控除</th><td>${checkedDeductions.join('、')}</td></tr>`;
+                } else {
+                    sectionContent += `<tr><th>選択した控除</th><td>なし</td></tr>`;
+                }
+            }
 
             // Find inputs
             const inputs = section.querySelectorAll('input, select, textarea');
@@ -1662,7 +1843,78 @@ function renderReview() {
 
             inputs.forEach(input => {
                 if (input.type === 'hidden' || input.type === 'button' || input.type === 'submit') return;
-                if (input.type === 'file') return; // Skip file inputs in review
+
+                // Skip Deduction checkboxes (Handled in summary above)
+                if (input.name === 'deductions') return;
+
+                // Specific exclusions for Banking
+                if (input.id === 'bankCandidateSelect' || input.id === 'branchCandidateSelect') return;
+
+                // Skip if hidden (e.g. inside unchecked deduction detail)
+                if (isClassHidden(input)) return;
+
+                // For Section G specific labeling logic
+                let label = getFieldLabel(input);
+                if (section.id === 'section-g') {
+                    // Check if inside deduction-detail
+                    const detail = input.closest('.deduction-detail');
+                    if (detail) {
+                        // Find Deduction Name from previous checkbox card
+                        const card = detail.previousElementSibling;
+                        const dedName = card ? card.querySelector('span')?.textContent.trim() : '';
+
+                        // Find specific field label
+                        let subLabel = '';
+                        if (input.type === 'file') {
+                            subLabel = '（証明書等）';
+                        } else {
+                            // Try to find local label
+                            // Radio question?
+                            const formGroup = input.closest('.form-group') || detail; // detail might act as group
+                            const qLabel = formGroup.querySelector('.question-label');
+
+                            // If input is radio, look for preceding label if question label missed
+                            if (input.type === 'radio') {
+                                const groupDiv = input.closest('.radio-group-horizontal') || input.closest('.radio-group');
+                                if (groupDiv) {
+                                    // Check for label before the group div
+                                    const prevEl = groupDiv.previousElementSibling;
+                                    if (prevEl && prevEl.tagName === 'LABEL') {
+                                        subLabel = prevEl.textContent.trim();
+                                    }
+                                    // If qLabel found above, use it?
+                                    if (!subLabel && qLabel) subLabel = qLabel.textContent.replace('必須', '').trim();
+                                }
+                            } else {
+                                // Text input
+                                const prevLabel = input.previousElementSibling;
+                                if (prevLabel && prevLabel.tagName === 'LABEL') subLabel = prevLabel.textContent.trim();
+                            }
+                        }
+
+                        if (dedName) {
+                            if (subLabel) label = `${dedName}：${subLabel}`;
+                            else label = dedName;
+                        }
+                    }
+                }
+
+                if (input.type === 'file') {
+                    // Handle file inputs in review
+                    const files = input.files;
+
+                    if (files && files.length > 0) {
+                        const fileNames = Array.from(files).map(f => f.name).join(', ');
+                        sectionContent += `<tr><th>${label}</th><td>${fileNames}</td></tr>`;
+                    } else if (input.classList.contains('upload-required')) {
+                        // Required missing - RED
+                        sectionContent += `<tr><th>${label}</th><td><span style="color:red; font-weight:bold;">添付なし（必須）</span></td></tr>`;
+                    } else {
+                        // Optional missing - Black
+                        sectionContent += `<tr><th>${label}</th><td><span>添付なし</span></td></tr>`;
+                    }
+                    return;
+                }
 
                 // For radio buttons, only process checked ones and avoid duplicates
                 if (input.type === 'radio') {
@@ -1674,10 +1926,21 @@ function renderReview() {
                 if (input.type === 'checkbox' && !input.checked) return;
 
                 // Skip if parent is hidden (e.g. Spouse block when Single)
-                if (isHidden(input)) return;
+                // Use class-based visibility check
+                if (isClassHidden(input)) return;
 
-                const label = getFieldLabel(input);
+                // Label logic already handled above but need to define default label if not set (for non-Section G)
+                // Wait, I defined 'let label = getFieldLabel(input)' at start of loop.
+                // And updated it inside if(section.id === 'section-g').
+                // So now I just use 'label'.
+                // BUT wait, existing code below re-declares 'let label = getFieldLabel(input)' again!
+                // I MUST remove the re-declaration below.
+
                 let value = input.value;
+
+                // Override labels for Banking Branch to match user request
+                if (input.id === 'branchCodeInput') label = '支店コード';
+                if (input.id === 'branchNameInput') label = '支店名';
 
                 if (input.type === 'password') {
                     value = '********';
@@ -1685,7 +1948,24 @@ function renderReview() {
                     const opt = input.options[input.selectedIndex];
                     value = opt ? opt.text : '';
                 } else if (input.type === 'radio' || input.type === 'checkbox') {
-                    // Get the display text from the parent label
+                    // Start of existing logic...
+                    // I will replicate logic here but ensure I don't overwrite label inside Section G
+
+                    // Get the Question Text if possible (ONLY if not Section G, or valid override)
+                    if (section.id !== 'section-g') {
+                        const formGroup = input.closest('.form-group');
+                        let questionText = null;
+                        if (formGroup) {
+                            const qLabel = formGroup.querySelector('.question-label');
+                            if (qLabel) questionText = qLabel.textContent.replace('必須', '').trim();
+                            else {
+                                const lbl = formGroup.querySelector('label');
+                                if (lbl) questionText = lbl.textContent.replace('必須', '').trim();
+                            }
+                        }
+                        if (questionText) label = questionText;
+                    }
+
                     const parentLabel = input.closest('label');
                     if (parentLabel) {
                         // Get text content excluding the input itself
@@ -1716,7 +1996,17 @@ function renderReview() {
                     }
                 }
 
+                // Display even if empty for Required Fields (except Search inputs if we want strictness, but for Review, show empty state)
+                if (input.hasAttribute('required') || input.classList.contains('required')) {
+                    if (!value || value.trim() === '') {
+                        value = '<span style="color:red;">（未入力）</span>';
+                    }
+                }
+
                 if (value && value.trim() !== '') {
+                    sectionContent += `<tr><th>${label}</th><td>${value}</td></tr>`;
+                } else if (value && value.includes('span')) {
+                    // For the "Unentered" case
                     sectionContent += `<tr><th>${label}</th><td>${value}</td></tr>`;
                 }
             });
@@ -1731,32 +2021,195 @@ function renderReview() {
     container.innerHTML = html;
 }
 
-// Collect all form data into an object
-function collectFormData() {
-    const formData = {};
-    const form = document.getElementById('taxForm');
-    const inputs = form.querySelectorAll('input, select, textarea');
+// ------------------------------------------------------------------
+// DATA COLLECTION & FORM SCHEMA
+// ------------------------------------------------------------------
 
-    inputs.forEach(input => {
-        if (input.type === 'file' || input.type === 'button' || input.type === 'submit') return;
-        if (input.type === 'radio' && !input.checked) return;
-        if (input.type === 'checkbox' && !input.checked) return;
+// Define the Order and Labels for Google Sheets
+// Keys must match 'name' attributes in HTML.
+const FORM_FIELDS = [
+    // --- Section A: Basic ---
+    { name: 'fullName', label: '氏名', type: 'text' },
+    { name: 'fullNameKana', label: '氏名（カナ）', type: 'text' },
 
-        // Skip hidden elements
-        if (isHidden(input)) return;
+    // --- Section B: Income Type ---
+    { name: 'incomeType', label: '収入形態', type: 'radio', map: { '1': '本案件のみ', '2': '本案件＋給与', '3': '本案件＋その他事業' } },
 
-        const name = input.name;
-        if (!name) return;
+    // --- Section C: Contact ---
+    { name: 'email', label: 'メールアドレス', type: 'text' },
+    { name: 'phone', label: '電話番号', type: 'text' },
+    { name: 'zipCode', label: '現住所郵便番号', type: 'text' },
+    { name: 'prefecture', label: '現住所都道府県', type: 'select' },
+    { name: 'address1', label: '現住所市区町村・番地', type: 'text' },
+    { name: 'address2', label: '現住所建物名', type: 'text' },
 
-        if (input.type === 'checkbox') {
-            if (!formData[name]) formData[name] = [];
-            formData[name].push(input.value);
-        } else {
-            formData[name] = input.value;
+    { name: 'addressJan1', label: '1/1時点の住所', type: 'radio', map: { 'same': '現住所と同じ', 'different': '異なる' } },
+    // Hidden details if different
+    { name: 'jan1Zip', label: '1/1郵便番号', type: 'text' },
+    { name: 'jan1Pref', label: '1/1都道府県', type: 'select' },
+    { name: 'jan1City', label: '1/1市区町村・番地', type: 'text' },
+    { name: 'jan1Building', label: '1/1建物名', type: 'text' },
+
+    { name: 'dob', label: '生年月日', type: 'text' },
+    { name: 'myNumber', label: 'マイナンバー', type: 'text' }, // Value masked in sheet? or raw? Access limited.
+    { name: 'blueReturn', label: '青色申告承認', type: 'radio', map: { 'yes': 'あり', 'no': 'なし' } },
+    { name: 'pastFiling', label: '過去の申告有無', type: 'radio', map: { 'yes': 'あり', 'no': 'なし' } },
+
+    // Hidden e-Tax
+    { name: 'etaxId', label: '利用者識別番号', type: 'text' },
+    { name: 'etaxPassword', label: 'e-Taxパスワード', type: 'text' },
+
+    // --- Section F: Family ---
+    { name: 'isHead', label: '世帯主区分', type: 'radio', map: { 'yes': '世帯主本人', 'no': '世帯主ではない' } },
+    { name: 'headRelation', label: '世帯主との続柄', type: 'select', map: { 'spouse': '配偶者', 'child': '子', 'parent': '親', 'other': 'その他' } },
+    { name: 'maritalStatus', label: '婚姻状況', type: 'select', map: { 'married': '婚姻中', 'commonlaw': '事実婚', 'divorced': '離婚', 'bereaved': '死別', 'single': '未婚' } },
+
+    // Spouse Details
+    { name: 'spouseName', label: '配偶者氏名', type: 'text' },
+    { name: 'spouseKana', label: '配偶者カナ', type: 'text' },
+    { name: 'spouseDob', label: '配偶者生年月日', type: 'text' },
+    { name: 'spouseMyNumber', label: '配偶者マイナンバー', type: 'text' },
+    { name: 'spouseIncome', label: '配偶者所得見込', type: 'text' },
+    { name: 'spouseDisability', label: '配偶者障害の有無', type: 'radio', map: { 'none': 'なし', 'general': '一般障害', 'special': '特別障害' } },
+    { name: 'spouseAsDependent', label: '配偶者扶養適用の有無', type: 'radio', map: { 'yes': '適用する', 'no': '適用しない' } },
+    { name: 'spouseLiveTogether', label: '配偶者同居区分', type: 'radio', map: { 'yes': '同居', 'no': '別居' } },
+    // Spouse Address
+    { name: 'spouseZip', label: '配偶者郵便番号', type: 'text' },
+    { name: 'spousePref', label: '配偶者都道府県', type: 'select' },
+    { name: 'spouseCity', label: '配偶者市区町村', type: 'text' },
+    { name: 'spouseBuilding', label: '配偶者建物名', type: 'text' },
+
+    // Dependents
+    { name: 'hasDependents', label: '扶養親族の有無(配偶者除く)', type: 'radio', map: { 'yes': 'あり', 'no': 'なし' } },
+    { name: 'dependentCount', label: '扶養親族人数', type: 'text' },
+    { name: '_dependentsSummary', label: '扶養親族詳細情報', type: 'calculated' }, // Special handling
+
+    // Single Parent (Widow/Widower)
+    { name: 'hasChildTogether', label: '生計を一にする子の有無', type: 'radio', map: { 'yes': 'あり', 'no': 'なし' } },
+    { name: 'supportChild', label: '子の扶養予定', type: 'radio', map: { 'yes': 'はい', 'no': 'いいえ', 'unknown': '不明' } },
+    { name: 'incomeUnder5m', label: '所得500万円以下', type: 'radio', map: { 'yes': 'はい', 'no': 'いいえ', 'unknown': '不明' } },
+
+    // --- Section D: Salary ---
+    { name: 'companyCount', label: '勤務先の数', type: 'select', map: { '1': '1社', '2': '2社以上' } },
+    { name: 'withholdingSlip', label: '源泉徴収票', type: 'file' },
+    { name: 'yearEndAdj', label: '年末調整有無', type: 'radio', map: { 'yes': '済み', 'no': '未済', 'unknown': '不明' } },
+
+    // --- Section G: Deductions ---
+    {
+        name: 'deductions', label: '適用する控除', type: 'checkbox', map: {
+            'medical': '医療費控除',
+            'furusato': 'ふるさと納税',
+            'lifeIns': '生命保険料控除',
+            'earthquake': '地震保険料控除',
+            'ideco': 'iDeCo',
+            'housing': '住宅ローン控除',
+            'handicap': '障害者控除',
+            'other': 'その他'
         }
+    },
+
+    // Deduction Details
+    { name: 'medicalExpenses', label: '医療費・概算額', type: 'text' },
+    { name: 'medicalNotice', label: '医療費通知の有無', type: 'radio', map: { 'yes': 'あり', 'no': 'なし' } },
+
+    { name: 'furusatoCount', label: 'ふるさと納税寄附先数', type: 'text' },
+    { name: 'onestop', label: 'ワンストップ特例利用', type: 'radio', map: { 'yes': '利用する', 'no': '利用しない' } },
+    // Only File inputs for other deductions, we map files later
+
+    { name: 'otherDeductionDetail', label: 'その他控除詳細', type: 'text' },
+
+    // --- Section H: Bank ---
+    { name: 'bankName', label: '銀行名', type: 'text' },
+    { name: 'branchName', label: '支店名', type: 'text' },
+    { name: 'accountType', label: '預金種別', type: 'select', map: { 'ordinary': '普通', 'current': '当座' } },
+    { name: 'accountNumber', label: '口座番号', type: 'text' },
+    { name: 'accountHolder', label: '口座名義(カナ)', type: 'text' },
+
+    { name: 'taxMethod', label: '希望申告方法', type: 'radio', map: { 'etax': 'e-Tax', 'paper': '書面', 'undecided': '未定' } }
+];
+
+// Replaces original collectFormData
+function collectFormData() {
+    const data = {};
+    const form = document.getElementById('taxForm');
+
+    FORM_FIELDS.forEach(field => {
+        // Handle Calculated Fields
+        if (field.type === 'calculated') {
+            if (field.name === '_dependentsSummary') {
+                const depSection = document.getElementById('dependentsContainer');
+                if (isClassHidden(depSection)) {
+                    data[field.name] = '[SKIPPED]';
+                } else {
+                    // Aggregate dependent inputs
+                    const depItems = document.querySelectorAll('.dependent-item');
+                    if (depItems && depItems.length > 0) {
+                        let summaries = [];
+                        depItems.forEach((item, idx) => {
+                            const name = item.querySelector(`[name="dependentName_${idx}"]`)?.value || '';
+                            const rel = item.querySelector(`[name="dependentRelation_${idx}"]`)?.value || '';
+                            const dob = item.querySelector(`[name="dependentDob_${idx}"]`)?.value || '';
+                            if (name || rel || dob) {
+                                summaries.push(`【${idx + 1}】${name}(${rel}, ${dob})`);
+                            }
+                        });
+                        data[field.name] = summaries.length > 0 ? summaries.join('\n') : '';
+                    } else {
+                        data[field.name] = '';
+                    }
+                }
+            }
+            return;
+        }
+
+        // Standard Fields
+        const elements = form.querySelectorAll(`[name="${field.name}"]`);
+        if (elements.length === 0) {
+            // Not found in DOM
+            data[field.name] = '';
+            return;
+        }
+
+        const firstEl = elements[0];
+        // Check Visibility
+        // We use the first element to determine visibility of the group
+        if (isClassHidden(firstEl)) {
+            data[field.name] = '[SKIPPED]';
+            return;
+        }
+
+        let val = '';
+
+        if (field.type === 'radio') {
+            const checked = form.querySelector(`input[name="${field.name}"]:checked`);
+            val = checked ? checked.value : '';
+        } else if (field.type === 'checkbox') {
+            const checked = form.querySelectorAll(`input[name="${field.name}"]:checked`);
+            const values = Array.from(checked).map(c => c.value);
+            // Translate values
+            val = values.map(v => field.map ? (field.map[v] || v) : v).join('、');
+            // If visible but none checked => Empty string
+        } else if (field.type === 'file') {
+            // Files: Check if files exist
+            // Note: For accumulated files handling, we might need to check 'input.files' OR our accumulated structure.
+            // Currently our accumulated logic handles 'input.files' update on change, but verify.
+            // Simplified: Just check length.
+            const hasFile = Array.from(elements).some(el => el.files && el.files.length > 0);
+            val = hasFile ? 'アップロードあり' : 'なし';
+        } else {
+            // Text / Select
+            val = firstEl.value || '';
+        }
+
+        // Apply Map Translation for Radio/Select if single value
+        if ((field.type === 'radio' || field.type === 'select') && field.map && val) {
+            val = field.map[val] || val;
+        }
+
+        data[field.name] = val;
     });
 
-    return formData;
+    return data;
 }
 
 let isSubmitting = false;
@@ -1764,40 +2217,8 @@ let isSubmitting = false;
 async function confirmSubmit() {
     if (isSubmitting) return;
 
-    // File upload validation at final submission
-    const activeDeductionDetails = document.querySelectorAll('.deduction-detail:not(.hidden)');
-    let fileErrors = [];
-
-    activeDeductionDetails.forEach(detail => {
-        const fileInputs = detail.querySelectorAll('input[type="file"].upload-required');
-        fileInputs.forEach(input => {
-            // Check if no files uploaded (don't rely on required attribute)
-            if (input.files.length === 0) {
-                input.classList.add('input-error');
-                // Get the label text for this deduction - look at the checkbox before the detail block
-                const checkboxCard = detail.previousElementSibling;
-                const deductionName = checkboxCard?.querySelector('span')?.textContent || '控除項目';
-                if (!fileErrors.includes(deductionName)) {
-                    fileErrors.push(deductionName);
-                }
-            }
-        });
-    });
-
-    if (fileErrors.length > 0) {
-        let errorMessage = '以下の控除項目に必要な書類がアップロードされていません：\n\n';
-        fileErrors.forEach((name, index) => {
-            errorMessage += `${index + 1}. ${name}\n`;
-        });
-        errorMessage += '\n戻って書類をアップロードしてください。';
-
-        showErrorModal([{
-            field: '必要書類の不足',
-            message: errorMessage,
-            example: '控除証明書、領収書などをアップロード'
-        }]);
-        return;
-    }
+    // File validation is now handled in the Review step (checkMissingUploadsConfirm)
+    // We do not block here to allow "Proceed without upload" flow.
 
     // Final popup
     if (!confirm('本当に送信しますか？\n（修正が必要な場合は「キャンセル」を押して戻ってください）')) {
@@ -1918,6 +2339,10 @@ function isVisible(el) {
     return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
 }
 
+function isHidden(el) {
+    return !isVisible(el);
+}
+
 /* File Upload Logic */
 function setupFileUploads() {
     document.querySelectorAll('input[type="file"]').forEach(input => {
@@ -1935,10 +2360,43 @@ function setupFileUploads() {
 
 function handleFileSelect(e) {
     const input = e.target;
-    const list = input.nextElementSibling; // Assuming .file-list is next
-    const files = Array.from(input.files);
+    const list = input.nextElementSibling;
+    const newFiles = Array.from(input.files);
 
-    renderFileList(input, list, files);
+    // Get existing files from data attribute or just assume input.files is source of truth?
+    // But input.files is overwritten on change.
+    // We need to maintain a state.
+    // However, since we re-assign input.files using DataTransfer, lines 2155 in removeFile suggests we CAN modify input.files.
+    // BUT on 'change' event, input.files ONLY contains the new selection.
+    // We need to store previous files somewhere? 
+    // Or we expect the user to select ALL files at once?
+    // User requested "Multiple upload possible... delete button".
+    // If I select A, then select B. 'change' fires with B. A is lost from input.files.
+    // To support "Add file", we need a custom store OR we need to inspect the PREVIOUS state?
+    // We can't inspecting previous state of input.files easily after change.
+
+    // Strategy: We can't easily implement "Accumulate" on a single standard file input without a side-buffer.
+    // OR we use the file-list visual as the "True State" and just update input.files to match it?
+    // No, we need the file objects.
+
+    // We can use a property on the element to store accumulated files.
+    if (!input._accumulatedFiles) input._accumulatedFiles = [];
+
+    // Merge new files
+    newFiles.forEach(f => {
+        // Avoid duplicates by name/size/lastModified
+        const exists = input._accumulatedFiles.some(af =>
+            af.name === f.name && af.size === f.size && af.lastModified === f.lastModified
+        );
+        if (!exists) input._accumulatedFiles.push(f);
+    });
+
+    // Update input.files
+    const dt = new DataTransfer();
+    input._accumulatedFiles.forEach(f => dt.items.add(f));
+    input.files = dt.files;
+
+    renderFileList(input, list, input._accumulatedFiles);
 }
 
 function renderFileList(input, list, files) {
@@ -1986,6 +2444,7 @@ function removeFile(input, indexToRemove) {
     });
 
     input.files = dt.files; // Update the input
+    input._accumulatedFiles = Array.from(dt.files); // Sync accumulation
 
     // Re-render
     const list = input.nextElementSibling;
@@ -2000,3 +2459,205 @@ function removeFile(input, indexToRemove) {
 
 
 
+
+// Check for missing uploads and confirm with user
+function checkMissingUploadsConfirm() {
+    // 1. Check Deduction Section (Section G)
+    const activeDeductionDetails = document.querySelectorAll('.deduction-detail:not(.hidden)');
+    let missingItems = [];
+
+    activeDeductionDetails.forEach(detail => {
+        const fileInputs = detail.querySelectorAll('input[type="file"]');
+        // We check all file inputs in active details, primarily those marked upload-required or generally expected
+        fileInputs.forEach(input => {
+            if (input.files.length === 0) {
+                // Get the label text for this deduction
+                const checkboxCard = detail.previousElementSibling;
+                const deductionName = checkboxCard?.querySelector('span')?.textContent || getFieldLabel(input);
+                if (!missingItems.includes(deductionName)) {
+                    missingItems.push(deductionName);
+                }
+            }
+        });
+    });
+
+    // 2. Check Withholding Slip (Section D)
+    const salaryBlock = document.getElementById('salaryIncomeBlock');
+    if (salaryBlock && !isHidden(salaryBlock)) {
+        const withholdingInput = document.getElementById('withholdingSlip');
+        if (withholdingInput && withholdingInput.files.length === 0) {
+            missingItems.push('源泉徴収票');
+        }
+    }
+
+    if (missingItems.length > 0) {
+        const message = '以下の項目について、添付ファイルがアップロードされていません。\nこのまま次へ進みますか？\n\n' +
+            missingItems.map(item => '・' + item).join('\n') +
+            '\n\n（書類なしで進む場合は「OK」、戻ってアップロードする場合は「キャンセル」）';
+
+        if (!confirm(message)) {
+            return false; // User cancelled, stay on page (or we could redirect)
+        }
+    }
+    return true; // Proceed
+}
+
+/* Missing Helper Functions */
+function validatePhoneNumber(val) {
+    if (!val) return null;
+    const clean = val.replace(/[^\d]/g, '');
+    if (clean.length !== 10 && clean.length !== 11) {
+        return {
+            field: '電話番号',
+            message: '電話番号は10桁または11桁で入力してください',
+            example: '090-1234-5678'
+        };
+    }
+    // Check prefix
+    if (clean.length === 11) {
+        if (!/^(090|080|070|050)/.test(clean)) {
+            return {
+                field: '電話番号',
+                message: '携帯電話（090,080,070）またはIP電話（050）を入力してください',
+                example: '090-1234-5678'
+            };
+        }
+    } else if (clean.length === 10) {
+        if (!clean.startsWith('0')) {
+            return {
+                field: '電話番号',
+                message: '市外局番から入力してください',
+                example: '03-1234-5678'
+            };
+        }
+    }
+    return null;
+}
+
+function validateEmail(input) {
+    const val = input.value;
+    if (!val) return null;
+    // Simple regex
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+        return {
+            field: 'メールアドレス',
+            message: '正しいメールアドレスの形式で入力してください',
+            example: 'example@email.com'
+        };
+    }
+    return null;
+}
+
+function validateKatakana(input) {
+    const val = input.value;
+    if (!val) return null;
+    // Allow spaces
+    if (!/^[\u30A0-\u30FF\s　]+$/.test(val)) {
+        return {
+            field: getFieldLabel(input),
+            message: '全角カタカナで入力してください',
+            example: 'ヤマダ タロウ'
+        };
+    }
+    return null;
+}
+
+function getFieldLabel(input) {
+    // Try to find label for this input
+    const id = input.id;
+    if (id) {
+        const label = document.querySelector(`label[for="${id}"]`);
+        if (label) {
+            return label.innerText.replace('必須', '').trim();
+        }
+    }
+    // Fallback: parent label or previous element label
+    const parentLabel = input.closest('label');
+    if (parentLabel) return parentLabel.innerText.replace('必須', '').trim();
+
+    // Fallback: previous sibling label in form-group
+    const formGroup = input.closest('.form-group');
+    if (formGroup) {
+        const label = formGroup.querySelector('label');
+        if (label) return label.innerText.replace('必須', '').trim();
+    }
+    return 'この項目';
+}
+
+function getRadioGroupLabel(container, name) {
+    const radio = container.querySelector(`input[name="${name}"]`);
+    if (radio) {
+        // Try to find a paragraph with question-label class in parent
+        const formGroup = radio.closest('.form-group');
+        if (formGroup) {
+            const qLabel = formGroup.querySelector('.question-label');
+            if (qLabel) return qLabel.innerText.replace('必須', '').trim();
+
+            const label = formGroup.querySelector('label');
+            if (label) return label.innerText.replace('必須', '').trim();
+        }
+    }
+    return '選択項目';
+}
+
+function isClassHidden(el) {
+    // Check if element or any ancestor up to form-step has 'hidden' class
+    let current = el;
+    while (current && !current.classList.contains('form-step')) {
+        if (current.classList.contains('hidden')) return true;
+        current = current.parentElement;
+    }
+    return false;
+}
+
+function validateStrictUploads() {
+    let missingRequired = [];
+    let missingOptional = [];
+
+    // Check Deduction Section (Section G)
+    const activeDeductionDetails = document.querySelectorAll('.deduction-detail:not(.hidden)');
+    activeDeductionDetails.forEach(detail => {
+        const fileInputs = detail.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(input => {
+            if (input.files.length === 0) {
+                const checkboxCard = detail.previousElementSibling;
+                const deductionName = checkboxCard?.querySelector('span')?.textContent || getFieldLabel(input);
+
+                if (input.classList.contains('upload-required')) {
+                    if (!missingRequired.includes(deductionName)) missingRequired.push(deductionName);
+                } else {
+                    if (!missingOptional.includes(deductionName)) missingOptional.push(deductionName);
+                }
+            }
+        });
+    });
+
+    // Check Withholding Slip (Section D)
+    const salaryBlock = document.getElementById('salaryIncomeBlock');
+    if (salaryBlock && !isClassHidden(salaryBlock)) { // Use isClassHidden to be safe
+        const withholdingInput = document.getElementById('withholdingSlip');
+        if (withholdingInput && withholdingInput.files.length === 0) {
+            missingRequired.push('源泉徴収票');
+        }
+    }
+
+    if (missingRequired.length > 0) {
+        showErrorModal([{
+            field: '必須ファイルの未添付',
+            message: '以下の項目はファイルのアップロードが必須です。\n戻ってアップロードしてください。',
+            example: missingRequired.join('、\n')
+        }]);
+        return false;
+    }
+
+    if (missingOptional.length > 0) {
+        // Confirmation for optional files
+        const message = '以下の項目について、添付ファイルがアップロードされていません。\nこのまま次へ進みますか？\n\n' +
+            missingOptional.map(item => '・' + item).join('\n') +
+            '\n\n（書類なしで進む場合は「OK」、戻ってアップロードする場合は「キャンセル」）';
+
+        if (!confirm(message)) return false;
+    }
+
+    return true;
+}
