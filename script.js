@@ -895,6 +895,7 @@ function handleSectionB() {
     if (incomeType === '3') {
         // Business Income Only -> Skip standard flow but MUST go to Review/Confirmation
         nextIndex = 8; // Route to Review Page (section-review)
+        renderReview(); // Ensure review page is rendered
     } else {
         nextIndex = 3;
     }
