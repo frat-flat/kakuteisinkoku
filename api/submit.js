@@ -85,7 +85,7 @@ export default async function handler(req, res) {
         // -------------------------------------------------------------
         // 2. Google Sheets Integration (GAS)
         // -------------------------------------------------------------
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzdLj5dqxg6Xqegl8b36lH41iSzevOIqfFUvliRxLJ0_-NCDbriyTyocEY93brWg0cx/exec';
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwQlnLApAXOIR8ISOKYpa7EeXM0VuMGNlZjOc3sg4KTF61gdkcY8TokF7N9Xt-7dcWJ/exec';
 
         try {
             // We send the ORIGINALLY collected formData which contains '[SKIPPED]'

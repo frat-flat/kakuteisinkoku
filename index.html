@@ -617,6 +617,8 @@
                                 <label><input type="radio" name="medicalNotice" value="yes"> あり</label>
                                 <label><input type="radio" name="medicalNotice" value="no"> なし</label>
                             </div>
+                            <label class="file-label">医療費の領収書等のアップロード</label>
+                            <input type="file" name="medicalFile" multiple class="upload-required">
                         </div>
 
                         <label class="checkbox-card">
@@ -633,7 +635,7 @@
                                 <label><input type="radio" name="onestop" value="no"> 利用しない</label>
                             </div>
                             <label class="file-label">受領証明書のアップロード</label>
-                            <input type="file" multiple>
+                            <input type="file" name="furusatoFile" multiple>
                         </div>
 
                         <label class="checkbox-card">
@@ -643,7 +645,7 @@
                         </label>
                         <div id="detail-lifeIns" class="deduction-detail hidden">
                             <label class="file-label">控除証明書のアップロード <span class="required">必須</span></label>
-                            <input type="file" multiple class="upload-required">
+                            <input type="file" name="lifeInsFile" multiple class="upload-required">
                         </div>
 
                         <label class="checkbox-card">
@@ -653,7 +655,7 @@
                         </label>
                         <div id="detail-earthquake" class="deduction-detail hidden">
                             <label class="file-label">控除証明書のアップロード <span class="required">必須</span></label>
-                            <input type="file" multiple class="upload-required">
+                            <input type="file" name="earthquakeFile" multiple class="upload-required">
                         </div>
 
                         <label class="checkbox-card">
@@ -663,7 +665,7 @@
                         </label>
                         <div id="detail-ideco" class="deduction-detail hidden">
                             <label class="file-label">掛金払込証明書のアップロード <span class="required">必須</span></label>
-                            <input type="file" multiple class="upload-required">
+                            <input type="file" name="idecoFile" multiple class="upload-required">
                         </div>
 
                         <label class="checkbox-card">
@@ -673,7 +675,7 @@
                         </label>
                         <div id="detail-housing" class="deduction-detail hidden">
                             <label class="file-label">年末残高証明書等のアップロード <span class="required">必須</span></label>
-                            <input type="file" multiple class="upload-required">
+                            <input type="file" name="housingFile" multiple class="upload-required">
                         </div>
 
                         <label class="checkbox-card">

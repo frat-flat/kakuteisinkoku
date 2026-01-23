@@ -2112,9 +2112,16 @@ const FORM_FIELDS = [
     { name: 'medicalExpenses', label: '医療費・概算額', type: 'text' },
     { name: 'medicalNotice', label: '医療費通知の有無', type: 'radio', map: { 'yes': 'あり', 'no': 'なし' } },
 
+    { name: 'medicalFile', label: '医療費領収書', type: 'file' },
+
     { name: 'furusatoCount', label: 'ふるさと納税寄附先数', type: 'text' },
     { name: 'onestop', label: 'ワンストップ特例利用', type: 'radio', map: { 'yes': '利用する', 'no': '利用しない' } },
-    // Only File inputs for other deductions, we map files later
+    { name: 'furusatoFile', label: '寄附金受領証明書', type: 'file' },
+
+    { name: 'lifeInsFile', label: '生命保険料控除証明書', type: 'file' },
+    { name: 'earthquakeFile', label: '地震保険料控除証明書', type: 'file' },
+    { name: 'idecoFile', label: '掛金払込証明書', type: 'file' },
+    { name: 'housingFile', label: '年末残高証明書', type: 'file' },
 
     { name: 'otherDeductionDetail', label: 'その他控除詳細', type: 'text' },
 
@@ -2125,7 +2132,60 @@ const FORM_FIELDS = [
     { name: 'accountNumber', label: '口座番号', type: 'text' },
     { name: 'accountHolder', label: '口座名義(カナ)', type: 'text' },
 
-    { name: 'taxMethod', label: '希望申告方法', type: 'radio', map: { 'etax': 'e-Tax', 'paper': '書面', 'undecided': '未定' } }
+    { name: 'taxMethod', label: '希望申告方法', type: 'radio', map: { 'etax': 'e-Tax', 'paper': '書面', 'undecided': '未定' } },
+
+    // --- Expanded Dependent Fields (Up to 5) ---
+    // Note: These will be populated by scanning the DOM for depName_1 etc.
+    // If not found, they stay empty.
+    { name: 'depName_1', label: '扶養親族1_氏名', type: 'text' },
+    { name: 'depKana_1', label: '扶養親族1_フリガナ', type: 'text' },
+    { name: 'depRel_1', label: '扶養親族1_続柄', type: 'select', map: { 'child': '子', 'parent': '親', 'spouse_special': '配偶者（特別）', 'other': 'その他' } },
+    { name: 'depDob_1', label: '扶養親族1_生年月日', type: 'text' },
+    { name: 'depIncome_1', label: '扶養親族1_所得', type: 'text' },
+    { name: 'depDisability_1', label: '扶養親族1_障害区分', type: 'radio', map: { 'none': 'なし', 'general': '一般障害', 'special': '特別障害' } },
+    { name: 'depLiveCheck_1', label: '扶養親族1_同居区分', type: 'radio', map: { 'together': '同居', 'separate': '別居' } },
+
+    { name: 'depName_2', label: '扶養親族2_氏名', type: 'text' },
+    { name: 'depKana_2', label: '扶養親族2_フリガナ', type: 'text' },
+    { name: 'depRel_2', label: '扶養親族2_続柄', type: 'select', map: { 'child': '子', 'parent': '親', 'spouse_special': '配偶者（特別）', 'other': 'その他' } },
+    { name: 'depDob_2', label: '扶養親族2_生年月日', type: 'text' },
+    { name: 'depIncome_2', label: '扶養親族2_所得', type: 'text' },
+    { name: 'depDisability_2', label: '扶養親族2_障害区分', type: 'radio', map: { 'none': 'なし', 'general': '一般障害', 'special': '特別障害' } },
+    { name: 'depLiveCheck_2', label: '扶養親族2_同居区分', type: 'radio', map: { 'together': '同居', 'separate': '別居' } },
+
+    { name: 'depName_3', label: '扶養親族3_氏名', type: 'text' },
+    { name: 'depKana_3', label: '扶養親族3_フリガナ', type: 'text' },
+    { name: 'depRel_3', label: '扶養親族3_続柄', type: 'select', map: { 'child': '子', 'parent': '親', 'spouse_special': '配偶者（特別）', 'other': 'その他' } },
+    { name: 'depDob_3', label: '扶養親族3_生年月日', type: 'text' },
+    { name: 'depIncome_3', label: '扶養親族3_所得', type: 'text' },
+    { name: 'depDisability_3', label: '扶養親族3_障害区分', type: 'radio', map: { 'none': 'なし', 'general': '一般障害', 'special': '特別障害' } },
+    { name: 'depLiveCheck_3', label: '扶養親族3_同居区分', type: 'radio', map: { 'together': '同居', 'separate': '別居' } },
+
+    { name: 'depName_4', label: '扶養親族4_氏名', type: 'text' },
+    { name: 'depKana_4', label: '扶養親族4_フリガナ', type: 'text' },
+    { name: 'depRel_4', label: '扶養親族4_続柄', type: 'select', map: { 'child': '子', 'parent': '親', 'spouse_special': '配偶者（特別）', 'other': 'その他' } },
+    { name: 'depDob_4', label: '扶養親族4_生年月日', type: 'text' },
+    { name: 'depIncome_4', label: '扶養親族4_所得', type: 'text' },
+    { name: 'depDisability_4', label: '扶養親族4_障害区分', type: 'radio', map: { 'none': 'なし', 'general': '一般障害', 'special': '特別障害' } },
+    { name: 'depLiveCheck_4', label: '扶養親族4_同居区分', type: 'radio', map: { 'together': '同居', 'separate': '別居' } },
+
+    { name: 'depName_5', label: '扶養親族5_氏名', type: 'text' },
+    { name: 'depKana_5', label: '扶養親族5_フリガナ', type: 'text' },
+    { name: 'depRel_5', label: '扶養親族5_続柄', type: 'select', map: { 'child': '子', 'parent': '親', 'spouse_special': '配偶者（特別）', 'other': 'その他' } },
+    { name: 'depDob_5', label: '扶養親族5_生年月日', type: 'text' },
+    { name: 'depIncome_5', label: '扶養親族5_所得', type: 'text' },
+    { name: 'depDisability_5', label: '扶養親族5_障害区分', type: 'radio', map: { 'none': 'なし', 'general': '一般障害', 'special': '特別障害' } },
+    { name: 'depLiveCheck_5', label: '扶養親族5_同居区分', type: 'radio', map: { 'together': '同居', 'separate': '別居' } },
+
+    // Calculated fields made explicit for boolean deduction columns
+    { name: 'isMedicalDeduction', label: '医療費控除（適用）', type: 'calculated_deduction', parentKey: 'medical' },
+    { name: 'isFurusatoDeduction', label: 'ふるさと納税（適用）', type: 'calculated_deduction', parentKey: 'furusato' },
+    { name: 'isLifeInsDeduction', label: '生命保険料控除（適用）', type: 'calculated_deduction', parentKey: 'lifeIns' },
+    { name: 'isEarthquakeDeduction', label: '地震保険料控除（適用）', type: 'calculated_deduction', parentKey: 'earthquake' },
+    { name: 'isIdecoDeduction', label: 'iDeCo・小規模企業共済（適用）', type: 'calculated_deduction', parentKey: 'ideco' },
+    { name: 'isHousingDeduction', label: '住宅ローン控除（適用）', type: 'calculated_deduction', parentKey: 'housing' },
+    { name: 'isHandicapDeduction', label: '障害者控除（適用）', type: 'calculated_deduction', parentKey: 'handicap' },
+    { name: 'isOtherDeduction', label: 'その他控除（適用）', type: 'calculated_deduction', parentKey: 'other' }
 ];
 
 // ------------------------------------------------------------------
@@ -2151,6 +2211,27 @@ function collectFormData() {
     const form = document.getElementById('taxForm');
 
     FORM_FIELDS.forEach(field => {
+        // Handle Calculated Fields for Deductions
+        if (field.type === 'calculated_deduction') {
+            // Check if the deduction checkbox group contains the parentKey
+            const checked = form.querySelectorAll(`input[name="deductions"]:checked`);
+            const values = Array.from(checked).map(c => c.value);
+            // If the section containing deductions is hidden, everything is false
+            const deductionsGroup = document.querySelector('input[name="deductions"]')?.closest('.form-step');
+            // Or use the helper to check if the GROUP itself is visible.
+            // But here we rely on the specific key being in the list.
+
+            // NOTE: If the SECTION is skipped, 'deductions' would be [SKIPPED] or empty.
+            // If the parent section is hidden, we return empty string or "なし".
+            const firstDed = document.querySelector('input[name="deductions"]');
+            if (firstDed && isConditionallyHidden(firstDed)) {
+                data[field.name] = '';
+            } else {
+                data[field.name] = values.includes(field.parentKey) ? '適用' : 'なし';
+            }
+            return;
+        }
+
         // Handle Calculated Fields
         if (field.type === 'calculated') {
             if (field.name === '_dependentsSummary') {
@@ -2159,15 +2240,22 @@ function collectFormData() {
                     data[field.name] = '[SKIPPED]';
                 } else {
                     // Aggregate dependent inputs
-                    const depItems = document.querySelectorAll('.dependent-item');
-                    if (depItems && depItems.length > 0) {
+                    const depItems = document.querySelectorAll('.dependent-item'); // Wait, dependent-item class not used in my snippet, checks card-section inside list
+                    const list = document.getElementById('dependentsList');
+                    // Actually, dependentsList contains children which are card-sections.
+                    if (list && list.children.length > 0) {
                         let summaries = [];
-                        depItems.forEach((item, idx) => {
-                            const name = item.querySelector(`[name="dependentName_${idx}"]`)?.value || '';
-                            const rel = item.querySelector(`[name="dependentRelation_${idx}"]`)?.value || '';
-                            const dob = item.querySelector(`[name="dependentDob_${idx}"]`)?.value || '';
+                        // Iterate through children
+                        Array.from(list.children).forEach((item, idx) => {
+                            // index starts at 0, but fields use 1-based index in snippet: depName_${count}
+                            // Wait, snippet 'addDependent' used: count = list.children.length + 1.
+                            // So the first child (index 0) has fields like depName_1.
+                            const count = idx + 1;
+                            const name = item.querySelector(`[name="depName_${count}"]`)?.value || '';
+                            const rel = item.querySelector(`[name="depRel_${count}"]`)?.value || '';
+                            const dob = item.querySelector(`[name="depDob_${count}"]`)?.value || '';
                             if (name || rel || dob) {
-                                summaries.push(`【${idx + 1}】${name}(${rel}, ${dob})`);
+                                summaries.push(`【${count}】${name}(${rel}, ${dob})`);
                             }
                         });
                         data[field.name] = summaries.length > 0 ? summaries.join('\n') : '';
