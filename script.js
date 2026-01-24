@@ -1951,6 +1951,12 @@ async function selectBankCandidate() {
     try {
         // ゆうちょ銀行（9900）の場合は専用の店番データを使用
         if (code === '9900') {
+            // 数字を漢数字に変換する関数
+            const toKanjiNumber = (numStr) => {
+                const kanjiMap = { '0': '〇', '1': '一', '2': '二', '3': '三', '4': '四', '5': '五', '6': '六', '7': '七', '8': '八', '9': '九' };
+                return numStr.split('').map(c => kanjiMap[c] || c).join('');
+            };
+
             // ゆうちょ銀行の店番は「X18」「X28」...「X98」のパターン（Xは0〜9）
             // 例：018, 028, 038, ..., 118, 128, ..., 998
             const yuchoBranches = {};
@@ -1958,11 +1964,12 @@ async function selectBankCandidate() {
                 for (let j = 1; j <= 9; j++) {
                     const branchCode = String(i) + String(j) + '8';
                     const paddedCode = branchCode.padStart(3, '0');
+                    const kanjiName = toKanjiNumber(paddedCode);
                     yuchoBranches[paddedCode] = {
                         code: paddedCode,
-                        name: paddedCode + '店',
-                        kana: paddedCode + 'テン',
-                        hira: paddedCode + 'てん'
+                        name: kanjiName,
+                        kana: kanjiName,
+                        hira: kanjiName
                     };
                 }
             }
