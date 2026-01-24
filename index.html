@@ -880,17 +880,25 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
 
             <!-- Section J: Completion -->
             <section id="section-j" class="form-step">
-                <div class="message-box success">
+                <!-- 通常の完了メッセージ (incomeType 1 or 2) -->
+                <div id="completionMessageNormal" class="message-box success">
                     <h2>送信完了</h2>
                     <p>ご提出ありがとうございます。</p>
                     <p>内容を確認し、必要に応じて担当者よりご連絡いたします。</p>
                     <p>確認メールをお送りしましたので、届いているかご確認ください。</p>
                 </div>
+                <!-- 事業所得ありの場合の完了メッセージ (incomeType 3) -->
+                <div id="completionMessageBusiness" class="message-box success hidden">
+                    <h2>送信完了</h2>
+                    <p>ご回答ありがとうございます。</p>
+                    <p>本案件の帳簿付けを進めております。</p>
+                    <p>2月末までにお渡しいたしますので、しばらくお待ちください。</p>
+                </div>
             </section>
 
         </form>
     </div>
-    <script src="script.js?v=14"></script>
+    <script src="script.js?v=15"></script>
 </body>
 
 </html>

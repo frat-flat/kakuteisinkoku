@@ -2646,6 +2646,21 @@ async function confirmSubmit() {
         // Clear saved progress on successful submit
         localStorage.removeItem('taxReturnFormData');
 
+        // Toggle completion message based on income type
+        const incomeTypeEl = document.querySelector('input[name="incomeType"]:checked');
+        const incomeType = incomeTypeEl ? incomeTypeEl.value : '1';
+        const normalMsg = document.getElementById('completionMessageNormal');
+        const businessMsg = document.getElementById('completionMessageBusiness');
+        if (incomeType === '3') {
+            // 事業所得ありの場合
+            if (normalMsg) normalMsg.classList.add('hidden');
+            if (businessMsg) businessMsg.classList.remove('hidden');
+        } else {
+            // 通常の場合
+            if (normalMsg) normalMsg.classList.remove('hidden');
+            if (businessMsg) businessMsg.classList.add('hidden');
+        }
+
         showStep(11); // Success page
     } catch (error) {
         console.error('Submit error:', error);
