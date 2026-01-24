@@ -87,6 +87,17 @@ const steps = [
 // ナビゲーション履歴（戻るボタン用）
 let stepHistory = [0];
 
+// ============================================================================
+// ■ 初期化処理（DOMContentLoaded）
+// ============================================================================
+// ページ読み込み完了時に以下の初期化処理を実行：
+// 1. updateProgressBar() - プログレスバーを初期表示
+// 2. createErrorModal() - エラーモーダルのDOM要素を生成
+// 3. setupInputListeners() - 入力フィールドにイベントリスナーを設定
+// 4. initBankingData() - 銀行データをAPIから取得
+// 5. initAutoSave() - 自動保存/復元機能を初期化
+// 6. setupFileUploads() - ファイルアップロード機能を初期化
+// ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
     updateProgressBar();
     createErrorModal();
@@ -139,8 +150,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFileUploads();
 });
 
-// Format Phone Number on Blur
-// Format Phone Number on Blur
+// ============================================================================
+// ■ 電話番号フォーマット機能
+// ============================================================================
+// 電話番号入力をフォーカスアウト時に自動整形する
+// - libphonenumber-jsライブラリがあれば使用（正確なフォーマット）
+// - なければ手動で「XXX-XXXX-XXXX」形式に整形
+// ============================================================================
 function formatPhone(input) {
     let val = input.value.trim().replace(/[^\d]/g, '');
     if (!val) return;
@@ -176,8 +192,14 @@ function formatPhone(input) {
     }
 }
 
-// Handle Zip Input (Auto-address)
-// Format Zip on Blur
+// ============================================================================
+// ■ 郵便番号処理機能
+// ============================================================================
+// formatZip: 郵便番号を「XXX-XXXX」形式に整形
+// handleZipInput: 7桁入力時にZipCloud APIから住所を自動取得
+// - 対応フィールド: zipCode, jan1Zip, spouseZip, depZip_1〜5
+// - 取得成功時は都道府県・市区町村を自動入力
+// ============================================================================
 function formatZip(input) {
     let val = input.value.replace(/[^\d]/g, '');
     if (val.length === 7) {
@@ -186,7 +208,9 @@ function formatZip(input) {
     }
 }
 
-// Handle Zip Input (Auto-address)
+// ============================================================================
+// ■ 郵便番号→住所自動入力
+// ============================================================================
 async function handleZipInput(input) {
     // 1. Get raw digits for API
     let val = input.value.replace(/[^\d]/g, '');
@@ -252,6 +276,15 @@ async function handleZipInput(input) {
     }
 }
 
+// ============================================================================
+// ■ 自動保存・復元機能
+// ============================================================================
+// initAutoSave: ページ読み込み時にローカルストレージから保存データを復元
+// - 保存データがあれば確認ダイアログを表示
+// - 「OK」で復元、「キャンセル」でデータ削除して再読み込み
+// saveProgress: フォーム入力値をローカルストレージに保存
+// restoreFormData: 保存されたデータをフォームに復元
+// ============================================================================
 function initAutoSave() {
     // Load saved data with confirmation
     const savedData = localStorage.getItem('taxReturnFormData');
@@ -339,7 +372,14 @@ function saveProgress() {
     localStorage.setItem('taxReturnFormData', JSON.stringify(data));
 }
 
-// Banking Data Logic
+// ============================================================================
+// ■ 銀行データ取得機能
+// ============================================================================
+// initBankingData: 全銀協コードAPIから銀行データを取得
+// - 成功時: window.REAL_BANKS に銀行データを格納
+// - 失敗時: よく使う銀行のモックデータにフォールバック
+// - window.useRealApi フラグでAPI使用状況を管理
+// ============================================================================
 async function initBankingData() {
     try {
         const response = await fetch('https://zengin-code.github.io/api/banks.json');
@@ -388,8 +428,16 @@ async function initBankingData() {
     }
 }
 
-// Setup input listeners for Enter key and blur validation
-// Setup input listeners for Enter key and blur validation
+// ============================================================================
+// ■ 入力フィールドイベントリスナー設定
+// ============================================================================
+// setupInputListeners: 全ての入力フィールドにイベントリスナーを設定
+// - Enterキー押下で次のフィールドへ移動
+// - フォーカスアウト時にバリデーション実行
+// - 電話番号フィールドは自動フォーマット
+// - 郵便番号フィールドは住所自動入力
+// - マイナンバー確認フィールドは一致チェック
+// ============================================================================
 function setupInputListeners() {
     document.querySelectorAll('input, select').forEach(input => {
         if (input.dataset.listenersAttached === 'true') return;
@@ -562,7 +610,12 @@ function validateKatakana(input) {
     return null;
 }
 
-// Move to next input on Enter
+// ============================================================================
+// ■ フィールド間移動機能
+// ============================================================================
+// moveToNextInput: Enterキー押下時に次の入力フィールドへフォーカス移動
+// - 最後のフィールドの場合は「次へ」ボタンにフォーカス
+// ============================================================================
 function moveToNextInput(currentInput) {
     const activeStep = document.querySelector('.form-step.active');
     const allInputs = Array.from(activeStep.querySelectorAll('input:not([type="radio"]):not([type="checkbox"]), select'));
@@ -579,7 +632,14 @@ function moveToNextInput(currentInput) {
     }
 }
 
-// Validate single input and show popup if error
+// ============================================================================
+// ■ 個別入力バリデーション
+// ============================================================================
+// validateSingleInput: 単一フィールドのバリデーション実行
+// - エラー時はモーダル表示、マイナンバー等は値クリア
+// getInputError: フィールドタイプに応じたエラーチェック
+// - 電話番号、郵便番号、カタカナ、マイナンバー等
+// ============================================================================
 function validateSingleInput(input) {
     // Clear previous error on this input
     input.classList.remove('input-error');
@@ -790,7 +850,14 @@ function validatePhoneNumber(val) {
     return null; // Valid
 }
 
-// Create Error Modal
+// ============================================================================
+// ■ エラーモーダル機能
+// ============================================================================
+// createErrorModal: エラー表示用のモーダルDOM要素を生成
+// showErrorModal: エラー内容をモーダルに表示（エラー配列を受け取る）
+// closeErrorModal: モーダルを閉じる
+// - エラーは field, message, example の3つのプロパティを持つオブジェクト
+// ============================================================================
 function createErrorModal() {
     const modal = document.createElement('div');
     modal.id = 'errorModal';
@@ -861,9 +928,15 @@ function showStep(index) {
     }
 }
 
-// Data Normalization Utilities
+// ============================================================================
+// ■ データ正規化ユーティリティ
+// ============================================================================
+// toHalfWidth: 全角英数字を半角に変換（電話番号、郵便番号等）
+// toFullWidthKana: 半角カナを全角カナに変換（フリガナ、口座名義等）
+// - 日本語入力での全角/半角混在を統一するための機能
+// ============================================================================
 
-// Convert Full-width Alphanumeric to Half-width (for numbers, emails, etc.)
+// toHalfWidth: 全角→半角変換
 function toHalfWidth(str) {
     if (!str) return '';
     return str.replace(/[！-～]/g, function (s) {
@@ -901,6 +974,15 @@ function toFullWidthKana(str) {
     }).replace(/ﾞ/g, '゛').replace(/ﾟ/g, '゜');
 }
 
+// ============================================================================
+// ■ ステップナビゲーション機能
+// ============================================================================
+// nextStep: 次のステップへ進む（バリデーション実行後）
+// - 収入形態に応じて分岐（Type 2は給与詳細、Type 3はスキップ等）
+// prevStep: 前のステップへ戻る（履歴スタックを使用）
+// handleSectionB: セクションBからの分岐処理
+// updateProgressBar: プログレスバーの進捗率を更新
+// ============================================================================
 function nextStep() {
     if (!validateCurrentStep()) {
         return;
@@ -1636,7 +1718,14 @@ function submitForm() {
 
     showStep(9);
 }
-/* New Logic for Spouse Address and Password Toggle */
+// ============================================================================
+// ■ 条件付き住所入力切替機能
+// ============================================================================
+// toggleSpouseAddress: 配偶者が別居の場合の住所入力欄を表示/非表示
+// toggleDepAddress: 扶養親族が別居の場合の住所入力欄を表示/非表示
+// - 表示時: 入力欄を表示し、必須属性を設定
+// - 非表示時: 入力欄を非表示にし、値をクリア
+// ============================================================================
 function toggleSpouseAddress(isSeparate) {
     const block = document.getElementById('spouseAddressBlock');
     const inputs = block.querySelectorAll('input, select');
@@ -1682,7 +1771,15 @@ function toggleDepAddress(radio, isSeparate) {
     }
 }
 
-/* Banking Logic */
+// ============================================================================
+// ■ 銀行情報入力機能
+// ============================================================================
+// handleBankNameInput: 銀行名入力時のオートコンプリート候補表示
+// selectBankCandidate: 候補から銀行を選択時の処理
+// handleBranchCodeInput: 支店コード/名入力時の処理
+// selectBranchCandidate: 候補から支店を選択時の処理
+// - 銀行コードと支店コード（各3桁）で口座を特定
+// ============================================================================
 
 function handleBankNameInput() {
     const input = document.getElementById('bankNameSearch');
@@ -2421,6 +2518,15 @@ function collectFormData() {
     return data;
 }
 
+// ============================================================================
+// ■ フォーム送信機能
+// ============================================================================
+// confirmSubmit: 最終送信処理を実行
+// 1. ファイルアップロードフェーズ: Supabase Storageに署名付きURLでアップロード
+// 2. データ送信フェーズ: collectFormData()でデータ収集し、/api/submit へPOST
+// - 成功時: ローカルストレージをクリアし、完了画面へ遷移
+// - 失敗時: エラーモーダルを表示
+// ============================================================================
 let isSubmitting = false;
 
 async function confirmSubmit() {
@@ -2547,6 +2653,12 @@ async function confirmSubmit() {
     }
 }
 
+// ============================================================================
+// ■ 可視性ヘルパー関数
+// ============================================================================
+// isVisible: 要素がDOMに表示されているかを判定
+// isHidden: 要素が非表示かを判定
+// ============================================================================
 function isVisible(el) {
     return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
 }
@@ -2555,7 +2667,18 @@ function isHidden(el) {
     return !isVisible(el);
 }
 
-/* File Upload Logic */
+// ============================================================================
+// ■ ファイルアップロード機能
+// ============================================================================
+// setupFileUploads: ファイル入力フィールドの初期化
+// - ファイルリスト表示用のDOM要素を生成
+// - change イベントリスナーを設定
+// handleFileSelect: ファイル選択時の処理
+// - 複数ファイルを累積モードで管理（_accumulatedFiles プロパティ）
+// - DataTransfer APIで input.files を更新
+// removeFile: 個別ファイルの削除
+// renderFileList: ファイルリストのUI表示
+// ============================================================================
 function setupFileUploads() {
     document.querySelectorAll('input[type="file"]').forEach(input => {
         // Create list container if not exists
