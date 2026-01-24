@@ -1824,24 +1824,44 @@ function handleBankNameInput() {
             const opt = document.createElement('option');
             opt.value = bank.code;
 
-            // Generate Formal Name
+            // Generate Formal Name (handle abbreviations properly)
             let formalName = bank.name;
             const c = parseInt(bank.code, 10);
             if (!isNaN(c)) {
                 if (c >= 1 && c <= 999) {
+                    // 銀行
                     if (!formalName.endsWith('銀行')) formalName += '銀行';
                 }
                 else if (c >= 1000 && c <= 1999) {
-                    if (!formalName.endsWith('信用金庫')) formalName += '信用金庫';
+                    // 信用金庫 - skip if already has '信金' or '信用金庫'
+                    if (!formalName.endsWith('信用金庫') && !formalName.includes('信金')) {
+                        formalName += '信用金庫';
+                    } else if (formalName.endsWith('信金')) {
+                        // Replace '信金' with '信用金庫'
+                        formalName = formalName.replace(/信金$/, '信用金庫');
+                    }
                 }
                 else if (c >= 2000 && c <= 2999) {
-                    if (!formalName.endsWith('信用組合')) formalName += '信用組合';
+                    // 信用組合 - skip if already has '信組' or '信用組合'
+                    if (!formalName.endsWith('信用組合') && !formalName.includes('信組')) {
+                        formalName += '信用組合';
+                    } else if (formalName.endsWith('信組')) {
+                        formalName = formalName.replace(/信組$/, '信用組合');
+                    }
                 }
                 else if (c >= 3000 && c <= 3999) {
-                    if (!formalName.endsWith('労働金庫')) formalName += '労働金庫';
+                    // 労働金庫 - skip if already has '労金' or '労働金庫'
+                    if (!formalName.endsWith('労働金庫') && !formalName.includes('労金')) {
+                        formalName += '労働金庫';
+                    } else if (formalName.endsWith('労金')) {
+                        formalName = formalName.replace(/労金$/, '労働金庫');
+                    }
                 }
                 else if (c >= 5000 && c <= 5999) {
-                    if (!formalName.endsWith('農業協同組合')) formalName += '農業協同組合';
+                    // 農業協同組合 - skip if already has 'JA' or '農協' or full name
+                    if (!formalName.endsWith('農業協同組合') && !formalName.includes('農協') && !formalName.startsWith('JA')) {
+                        formalName += '農業協同組合';
+                    }
                 }
                 else if (c === 9900) {
                     if (!formalName.endsWith('銀行')) formalName += '銀行';
@@ -2017,19 +2037,10 @@ function renderReview() {
             // Header Override for Section G
             const headerText = (section.id === 'section-g') ? '適用する控除' : header.textContent;
 
-            // Unique handling for Deductions (Section G) summary
+            // Unique handling for Deductions (Section G)
+            // NOTE: 「選択した控除」サマリー行は削除。選択した各控除の詳細のみ表示する
             if (section.id === 'section-g') {
-                const checkedDeductions = Array.from(section.querySelectorAll('input[name="deductions"]:checked'))
-                    .map(cb => {
-                        const span = cb.nextElementSibling;
-                        return span ? span.textContent.trim() : cb.value;
-                    });
-
-                if (checkedDeductions.length > 0) {
-                    sectionContent += `<tr><th>選択した控除</th><td>${checkedDeductions.join('、')}</td></tr>`;
-                } else {
-                    sectionContent += `<tr><th>選択した控除</th><td>なし</td></tr>`;
-                }
+                // No summary row - individual deduction details will be shown below
             }
 
             // Find inputs

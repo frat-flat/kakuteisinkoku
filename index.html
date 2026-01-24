@@ -612,8 +612,8 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="file-label">源泉徴収票のアップロード <span class="any">任意</span></label>
-                        <input type="file" id="withholdingSlip" name="withholdingSlip">
+                        <label class="file-label">源泉徴収票のアップロード <span class="required">必須</span></label>
+                        <input type="file" id="withholdingSlip" name="withholdingSlip" required class="upload-required">
                     </div>
                     <div class="form-group">
                         <p class="question-label">年末調整済みですか？<span class="required">必須</span></p>
@@ -653,7 +653,7 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
                                 <label><input type="radio" name="medicalNotice" value="no"> なし</label>
                             </div>
                             <label class="file-label">医療費の領収書等のアップロード</label>
-                            <input type="file" name="medicalFile" multiple class="upload-required">
+                            <input type="file" name="medicalFile" multiple>
                         </div>
 
                         <label class="checkbox-card">
@@ -890,7 +890,7 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
 
         </form>
     </div>
-    <script src="script.js?v=13"></script>
+    <script src="script.js?v=14"></script>
 </body>
 
 </html>
