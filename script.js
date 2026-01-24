@@ -1957,21 +1957,18 @@ async function selectBankCandidate() {
                 return numStr.split('').map(c => kanjiMap[c] || c).join('');
             };
 
-            // ゆうちょ銀行の店番は「X18」「X28」...「X98」のパターン（Xは0〜9）
-            // 例：018, 028, 038, ..., 118, 128, ..., 998
+            // ゆうちょ銀行の店番は「XX8」のパターン（最後が8）
+            // 例：008, 018, 028, ..., 108, 118, ..., 508, ..., 998
             const yuchoBranches = {};
-            for (let i = 0; i <= 9; i++) {
-                for (let j = 1; j <= 9; j++) {
-                    const branchCode = String(i) + String(j) + '8';
-                    const paddedCode = branchCode.padStart(3, '0');
-                    const kanjiName = toKanjiNumber(paddedCode);
-                    yuchoBranches[paddedCode] = {
-                        code: paddedCode,
-                        name: kanjiName,
-                        kana: kanjiName,
-                        hira: kanjiName
-                    };
-                }
+            for (let i = 0; i <= 99; i++) {
+                const branchCode = String(i).padStart(2, '0') + '8';
+                const kanjiName = toKanjiNumber(branchCode);
+                yuchoBranches[branchCode] = {
+                    code: branchCode,
+                    name: kanjiName,
+                    kana: kanjiName,
+                    hira: kanjiName
+                };
             }
             window.CURRENT_BRANCHES = yuchoBranches;
             console.log('ゆうちょ銀行の店番データを生成しました:', Object.keys(yuchoBranches).length, '件');

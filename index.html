@@ -747,7 +747,7 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
                         <input type="hidden" name="bankCode" id="bankCode">
                         <!-- Select box for candidates -->
                         <select id="bankCandidateSelect" size="5" onchange="selectBankCandidate()"
-                            onblur="setTimeout(() => this.style.display='none', 200)">
+                            onclick="selectBankCandidate()" onblur="setTimeout(() => this.style.display='none', 200)">
                             <option value="">候補を選択</option>
                         </select>
                     </div>
@@ -776,7 +776,7 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
                         </div>
                         <!-- Candidate Select -->
                         <select id="branchCandidateSelect" size="5" onchange="selectBranchCandidate()"
-                            onblur="setTimeout(() => this.style.display='none', 200)">
+                            onclick="selectBranchCandidate()" onblur="setTimeout(() => this.style.display='none', 200)">
                             <option value="">候補を選択</option>
                         </select>
                     </div>
