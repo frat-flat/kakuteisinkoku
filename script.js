@@ -389,6 +389,18 @@ async function initBankingData() {
         window.REAL_BANKS = banks; // Store raw data
         console.log('Bank API loaded successfully:', Object.keys(banks).length, 'banks');
 
+        // ゆうちょ銀行がAPIに含まれていない場合は追加
+        if (!window.REAL_BANKS['9900']) {
+            window.REAL_BANKS['9900'] = {
+                code: '9900',
+                name: 'ゆうちょ銀行',
+                kana: 'ユウチョ',
+                hira: 'ゆうちょ',
+                roma: 'yucho'
+            };
+            console.log('ゆうちょ銀行を追加しました');
+        }
+
         // Override handleBankChange to use API
         window.useRealApi = true;
 
