@@ -2014,6 +2014,8 @@ function handleBranchNameInput() {
     const nameInput = document.getElementById('branchNameInput');
     const codeInput = document.getElementById('branchCodeInput');
     const select = document.getElementById('branchCandidateSelect');
+    const realCode = document.getElementById('realBranchCode');
+    const realName = document.getElementById('realBranchName');
     const val = nameInput.value;
 
     if (!val || !window.CURRENT_BRANCHES) {
@@ -2021,6 +2023,21 @@ function handleBranchNameInput() {
         return;
     }
 
+    // 完全一致のチェック
+    const exactMatch = Object.values(window.CURRENT_BRANCHES).find(br =>
+        br.name === val || br.kana === val || br.hira === val
+    );
+
+    if (exactMatch) {
+        // 完全一致した場合は自動で支店コードを入力
+        codeInput.value = exactMatch.code;
+        realCode.value = exactMatch.code;
+        realName.value = exactMatch.name;
+        select.style.display = 'none';
+        return;
+    }
+
+    // 部分一致の候補を検索
     const candidates = Object.values(window.CURRENT_BRANCHES).filter(br =>
         br.name.includes(val) || br.kana.includes(val) || br.hira.includes(val)
     );
