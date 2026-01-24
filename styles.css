@@ -528,6 +528,27 @@ input[type="checkbox"]:disabled+span {
     background: white;
     border: 1px solid #ccc;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: var(--border-radius);
+    overflow-y: auto;
+}
+
+#bankCandidateSelect option,
+#branchCandidateSelect option {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+#bankCandidateSelect option:hover,
+#branchCandidateSelect option:hover {
+    background-color: #E8F5E9;
+}
+
+#bankCandidateSelect option:first-child,
+#branchCandidateSelect option:first-child {
+    color: var(--text-muted);
+    font-style: italic;
+    background-color: #f5f5f5;
 }
 
 /* Review Table Styles */

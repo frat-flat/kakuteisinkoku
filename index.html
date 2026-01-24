@@ -752,6 +752,18 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
                         </select>
                     </div>
                     <p class="helper-text">銀行名の一部を入力すると候補が表示されます。</p>
+                    <!-- ゆうちょ銀行選択時の補足説明 -->
+                    <div id="yuchoHelpBlock" class="hidden info-box"
+                        style="background-color: #E3F2FD; border-left: 4px solid #1976D2; padding: 12px; margin-top: 10px;">
+                        <p style="margin: 0 0 8px 0; color: #1565C0; font-weight: bold;">📌 ゆうちょ銀行をご利用の方へ</p>
+                        <p style="margin: 0; font-size: 14px; color: #333;">
+                            支店名（店番）と口座番号は、通帳またはキャッシュカードに記載されています。<br>
+                            <strong>記号（5桁）・番号（8桁）</strong>から変換が必要です。<br>
+                            例：記号「10140」→ 店番「018」、番号「12345671」→ 口座番号「1234567」<br>
+                            <a href="https://www.jp-bank.japanpost.jp/kojin/sokin/koza/kj_sk_kz_furikomi.html"
+                                target="_blank" rel="noopener" style="color: #1976D2;">詳しい変換方法はこちら（ゆうちょ銀行公式）</a>
+                        </p>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>支店名・支店コード <span class="required">必須</span></label>
@@ -898,7 +910,7 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
 
         </form>
     </div>
-    <script src="script.js?v=15"></script>
+    <script src="script.js?v=16"></script>
 </body>
 
 </html>

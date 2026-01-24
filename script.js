@@ -421,7 +421,8 @@ async function initBankingData() {
             "0134": { code: "0134", name: "千葉銀行", kana: "チバ", hira: "ちば", roma: "chiba" },
             "0135": { code: "0135", name: "千葉興業銀行", kana: "チバコウギョウ", hira: "ちばこうぎょう", roma: "chibakogyo" },
             "0137": { code: "0137", name: "東京都民銀行", kana: "トウキョウトミン", hira: "とうきょうとみん", roma: "tokyotomin" },
-            "0152": { code: "0152", name: "横浜銀行", kana: "ヨコハマ", hira: "よこはま", roma: "yokohama" }
+            "0152": { code: "0152", name: "横浜銀行", kana: "ヨコハマ", hira: "よこはま", roma: "yokohama" },
+            "9900": { code: "9900", name: "ゆうちょ銀行", kana: "ユウチョ", hira: "ゆうちょ", roma: "yucho" }
         };
         window.useRealApi = false;
         console.log('Using mock bank data:', Object.keys(window.REAL_BANKS).length, 'banks');
@@ -1803,23 +1804,45 @@ function handleBankNameInput() {
         // So showAll should return EMPTY candidates.
         candidates = [];
     } else {
+        // 検索用の正規化関数（全角→半角、大文字→小文字）
+        const normalizeForSearch = (str) => {
+            if (!str) return '';
+            // 1. 全角英数字を半角に変換
+            let result = str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) => {
+                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+            });
+            // 2. 小文字に変換
+            return result.toLowerCase();
+        };
+
+        const normalizedInput = normalizeForSearch(val);
+
         candidates = Object.values(window.REAL_BANKS).filter(bank => {
             const bName = bank.name || '';
             const bKana = bank.kana || '';
             const bHira = bank.hira || '';
-            const bRoma = (bank.roma || '').toLowerCase();
-            const v = val.toLowerCase();
+            const bRoma = bank.roma || '';
 
-            // Prefix match checks
-            return bName.startsWith(val) ||
+            // 正規化した値で比較
+            const nName = normalizeForSearch(bName);
+            const nKana = normalizeForSearch(bKana);
+            const nHira = normalizeForSearch(bHira);
+            const nRoma = normalizeForSearch(bRoma);
+
+            // Prefix match checks（正規化済みの値で比較）
+            return nName.startsWith(normalizedInput) ||
+                nKana.startsWith(normalizedInput) ||
+                nHira.startsWith(normalizedInput) ||
+                nRoma.startsWith(normalizedInput) ||
+                // 元の値でも比較（日本語の完全一致用）
+                bName.startsWith(val) ||
                 bKana.startsWith(val) ||
-                bHira.startsWith(val) ||
-                bRoma.startsWith(v);
+                bHira.startsWith(val);
         });
     }
 
     if (candidates.length > 0) {
-        select.innerHTML = '<option value="">候補を選択</option>';
+        select.innerHTML = ''; // 候補のみを表示（プレースホルダーなし）
         candidates.forEach(bank => {
             const opt = document.createElement('option');
             opt.value = bank.code;
@@ -1873,7 +1896,7 @@ function handleBankNameInput() {
             select.appendChild(opt);
         });
         select.style.display = 'block';
-        select.size = Math.min(candidates.length + 1, 5); // Show list style
+        select.size = Math.min(candidates.length, 6); // 候補数に合わせて表示（最大6件）
     } else {
         select.style.display = 'none';
     }
@@ -1896,6 +1919,16 @@ async function selectBankCandidate() {
     document.getElementById('branchCodeInput').disabled = false;
     document.getElementById('branchNameInput').disabled = false;
 
+    // ゆうちょ銀行選択時の補足説明を表示/非表示
+    const yuchoHelpBlock = document.getElementById('yuchoHelpBlock');
+    if (yuchoHelpBlock) {
+        if (code === '9900') {
+            yuchoHelpBlock.classList.remove('hidden');
+        } else {
+            yuchoHelpBlock.classList.add('hidden');
+        }
+    }
+
     // Fetch Branches for this bank
     window.CURRENT_BRANCHES = {}; // Reset
     document.getElementById('branchCodeInput').value = '';
@@ -1904,10 +1937,31 @@ async function selectBankCandidate() {
     document.getElementById('realBranchName').value = '';
 
     try {
-        const res = await fetch(`https://zengin-code.github.io/api/branches/${code}.json`);
-        if (res.ok) {
-            window.CURRENT_BRANCHES = await res.json();
-            console.log('Branches loaded for', name);
+        // ゆうちょ銀行（9900）の場合は専用の店番データを使用
+        if (code === '9900') {
+            // ゆうちょ銀行の店番は「X18」「X28」...「X98」のパターン（Xは0〜9）
+            // 例：018, 028, 038, ..., 118, 128, ..., 998
+            const yuchoBranches = {};
+            for (let i = 0; i <= 9; i++) {
+                for (let j = 1; j <= 9; j++) {
+                    const branchCode = String(i) + String(j) + '8';
+                    const paddedCode = branchCode.padStart(3, '0');
+                    yuchoBranches[paddedCode] = {
+                        code: paddedCode,
+                        name: paddedCode + '店',
+                        kana: paddedCode + 'テン',
+                        hira: paddedCode + 'てん'
+                    };
+                }
+            }
+            window.CURRENT_BRANCHES = yuchoBranches;
+            console.log('ゆうちょ銀行の店番データを生成しました:', Object.keys(yuchoBranches).length, '件');
+        } else {
+            const res = await fetch(`https://zengin-code.github.io/api/branches/${code}.json`);
+            if (res.ok) {
+                window.CURRENT_BRANCHES = await res.json();
+                console.log('Branches loaded for', name);
+            }
         }
     } catch (e) {
         console.error('Failed to fetch branches', e);
@@ -1953,7 +2007,7 @@ function handleBranchNameInput() {
     );
 
     if (candidates.length > 0) {
-        select.innerHTML = '<option value="">候補を選択</option>';
+        select.innerHTML = ''; // 候補のみを表示（プレースホルダーなし）
         candidates.forEach(br => {
             const opt = document.createElement('option');
             opt.value = br.code;
@@ -1962,6 +2016,7 @@ function handleBranchNameInput() {
             select.appendChild(opt);
         });
         select.style.display = 'block';
+        select.size = Math.min(candidates.length, 6); // 候補数に合わせて表示（最大6件）
     } else {
         select.style.display = 'none';
     }
@@ -2422,7 +2477,19 @@ function collectFormData() {
     const data = {};
     const form = document.getElementById('taxForm');
 
+    // Special handling for incomeType=3 (事業所得あり)
+    // Only fullName, fullNameKana, and incomeType are collected; all others are SKIPPED
+    const incomeTypeEl = document.querySelector('input[name="incomeType"]:checked');
+    const isBusinessIncomeOnly = incomeTypeEl && incomeTypeEl.value === '3';
+    const essentialFieldsForType3 = ['fullName', 'fullNameKana', 'incomeType'];
+
     FORM_FIELDS.forEach(field => {
+        // For incomeType=3, skip all fields except essential ones
+        if (isBusinessIncomeOnly && !essentialFieldsForType3.includes(field.name)) {
+            data[field.name] = '[SKIPPED]';
+            return;
+        }
+
         // Handle Calculated Fields for Deductions
         if (field.type === 'calculated_deduction') {
             // Check if the deduction checkbox group contains the parentKey
