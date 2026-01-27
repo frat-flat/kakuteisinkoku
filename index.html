@@ -308,8 +308,9 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
                     <p class="question-label">過去に確定申告をしたことがありますか？ <span class="required">必須</span></p>
                     <div class="radio-group-horizontal">
                         <label><input type="radio" name="pastFiling" value="yes" required
-                                onchange="togglePastFiling(true)"> はい</label>
-                        <label><input type="radio" name="pastFiling" value="no" onchange="togglePastFiling(false)">
+                                onchange="togglePastFiling(true, event)"> はい</label>
+                        <label><input type="radio" name="pastFiling" value="no"
+                                onchange="togglePastFiling(false, event)">
                             いいえ</label>
                     </div>
                 </div>
@@ -879,7 +880,7 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
 
         </form>
     </div>
-    <script src="script.js?v=18"></script>
+    <script src="script.js?v=19"></script>
 </body>
 
 </html>

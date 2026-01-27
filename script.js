@@ -1318,14 +1318,17 @@ function toggleJan1Address(value) {
     }
 }
 
-function togglePastFiling(hasFiled) {
+function togglePastFiling(hasFiled, event) {
     const block = document.getElementById('etaxIdBlock');
     const etaxId = document.getElementById('etaxId');
     const etaxPass = document.getElementById('etaxPassword');
 
     if (hasFiled) {
         block.classList.remove('hidden');
-        alert('申告時に担当税理士のe-Taxからデータの紐づける際に必要となります。\nまた、利用者識別番号及びにパスワードがご不明の場合は代理で再発行手続きいたします。');
+        // 自動復元時(event.isTrusted=false)はアラートを表示しない
+        if (event && event.isTrusted) {
+            alert('申告時に担当税理士のe-Taxからデータの紐づける際に必要となります。\nまた、利用者識別番号及びにパスワードがご不明の場合は代理で再発行手続きいたします。');
+        }
         // 任意項目のためrequired設定は不要
         // etaxId.required = true;
         // etaxPass.required = true;
