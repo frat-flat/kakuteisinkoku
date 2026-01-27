@@ -79,7 +79,7 @@ const steps = [
     'section-g', // 6: 控除選択
     'section-h', // 7: 銀行口座
     'section-review', // 8: 入力内容確認
-    'section-accountant', // 9: 税理士情報
+    // 'section-accountant', // 9: 税理士情報 (削除)
     'section-i', // 10: 最終同意・送信
     'section-j'  // 11: 完了
 ];
@@ -1007,6 +1007,7 @@ function nextStep() {
     if (currentId === 'section-a') {
         nextIndex = 1;
     } else if (currentId === 'section-c') {
+        alert('申告時に担当税理士のe-Taxからデータの紐づける際に必要となります。\nまた、利用者識別番号及びにパスワードがご不明の場合は代理で再発行手続きいたします。');
         nextIndex = 4;
     } else if (currentId === 'section-f') {
         const incomeType = document.querySelector('input[name="incomeType"]:checked').value;
@@ -1325,8 +1326,9 @@ function togglePastFiling(hasFiled) {
 
     if (hasFiled) {
         block.classList.remove('hidden');
-        etaxId.required = true;
-        etaxPass.required = true;
+        // 任意項目のためrequired設定は不要
+        // etaxId.required = true;
+        // etaxPass.required = true;
     } else {
         block.classList.add('hidden');
         clearHiddenInputs(block);

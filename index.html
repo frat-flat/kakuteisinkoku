@@ -300,6 +300,7 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
                     <div class="radio-group-horizontal">
                         <label><input type="radio" name="blueReturn" value="yes" required> はい</label>
                         <label><input type="radio" name="blueReturn" value="no"> いいえ</label>
+                        <label><input type="radio" name="blueReturn" value="uncertain"> 不明</label>
                     </div>
                 </div>
 
@@ -315,18 +316,18 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
 
                 <div id="etaxIdBlock" class="hidden">
                     <div class="form-group">
-                        <label>利用者識別番号 <span class="required">必須</span></label>
+                        <label>利用者識別番号</label>
                         <input type="text" name="etaxId" id="etaxId" placeholder="16桁の数字" inputmode="numeric"
                             pattern="\d{16}" maxlength="16">
                         <p class="helper-text">e-Taxのログイン時に必要となります。</p>
                     </div>
                     <div class="form-group">
-                        <label>利用者識別番号パスワード <span class="required">必須</span></label>
+                        <label>利用者識別番号パスワード</label>
                         <div class="password-wrapper">
                             <input type="password" name="etaxPassword" id="etaxPassword" placeholder="英数字8〜50文字"
                                 minlength="8" maxlength="50">
                         </div>
-                        <label style="margin-top:10px;">利用者識別番号パスワード（確認用） <span class="required">必須</span></label>
+                        <label style="margin-top:10px;">利用者識別番号パスワード（確認用）</label>
                         <div class="password-wrapper">
                             <input type="password" name="etaxPasswordConfirm" id="etaxPasswordConfirm"
                                 placeholder="確認のためもう一度入力してください" minlength="8" maxlength="50"
@@ -802,11 +803,9 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
                 </div>
 
                 <div class="form-group">
-                    <p class="question-label">希望する申告方法 <span class="required">必須</span></p>
+                    <p class="question-label">希望する申告方法</p>
                     <div class="radio-group-horizontal">
-                        <label><input type="radio" name="taxMethod" value="etax" required> e-Tax</label>
-                        <label><input type="radio" name="taxMethod" value="paper"> 書面</label>
-                        <label><input type="radio" name="taxMethod" value="undecided"> 未定</label>
+                        <label><input type="radio" name="taxMethod" value="etax" checked> e-Tax</label>
                     </div>
                 </div>
 
@@ -828,53 +827,23 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
                 </div>
             </section>
 
-            <!-- Section Accountant: Tax Accountant Info -->
-            <section id="section-accountant" class="form-step">
-                <h2>担当税理士について</h2>
-                <div class="card-section">
-                    <h3>以下の税理士が担当します</h3>
-                    <p><strong>氏名:</strong> 佐藤 一郎（サトウ イチロウ）</p>
-                    <p><strong>登録番号:</strong> 12345</p>
-                    <p><strong>事務所:</strong> 佐藤税理士事務所</p>
-                </div>
-                <div class="nav-buttons">
-                    <button type="button" class="btn-prev" onclick="prevStep()">戻る</button>
-                    <button type="button" class="btn-next" onclick="nextStep()">次へ</button>
-                </div>
-            </section>
-
+            <!-- Section Accountant: Tax Accountant Info (REMOVED) -->
             <!-- Section I: Verification & Submit -->
             <section id="section-i" class="form-step">
                 <h2>確認・同意</h2>
 
-                <div class="card-section">
-                    <h3>必要書類の確認</h3>
-                    <ul class="check-list">
-                        <li><label><input type="checkbox" required> マイナンバーカード（または通知カード＋身分証）</label></li>
-                        <li><label><input type="checkbox" required> 源泉徴収票（該当者のみ）</label></li>
-                        <li><label><input type="checkbox" required> 各種控除証明書（該当者のみ）</label></li>
-                    </ul>
-                </div>
+                <!-- 必要書類の確認セクションは削除されました -->
 
                 <div class="card-section">
                     <h3>同意事項</h3>
                     <div class="terms-box">
                         <p><strong>個人情報の取り扱いについて</strong></p>
-                        <p>当社は、お預かりした個人情報を以下の目的で利用します。</p>
-                        <ul>
-                            <li>確定申告代行業務の遂行</li>
-                            <li>税務署への申告書提出</li>
-                            <li>関連するご連絡・お問い合わせ対応</li>
-                        </ul>
-                        <p>個人情報は、法令に基づく場合を除き、第三者に提供することはありません（ただし、税務署への提出を除く）。</p>
-                        <p>（スクロールして最後まで確認してください）</p>
-                        <p><strong>第1条（目的）</strong><br>本規約は、当社が提供する確定申告代行サービス（以下「本サービス」）の利用条件を定めるものです。</p>
-                        <p><strong>第2条（委託の内容）</strong><br>利用者は、当社に対し、所得税の確定申告書の作成および提出の代行を委託します。</p>
-                        <p><strong>第3条（資料の提供）</strong><br>利用者は、本サービスの遂行に必要な資料を、真実かつ正確な内容で当社に提供するものとします。</p>
-                        <p><strong>第4条（責任の範囲）</strong><br>当社は、利用者が提供した資料に基づき申告書を作成します。資料の不備や虚偽による不利益について、当社は一切の責任を負いません。
+                        <p>当社は、本サービスに関連して取得した個人情報を、確定申告代行業務の遂行および税務署への申告書提出の目的のみに利用します。また、法令に基づく場合を除き、第三者に提供することはありません。
                         </p>
-                        <p><strong>第5条（守秘義務）</strong><br>当社は、本サービスの遂行上知り得た利用者の個人情報および秘密情報を、厳重に管理し、意図的に第三者に漏洩しません。</p>
-                        <p><strong>第6条（解約）</strong><br>利用者は、いつでも本契約を解約することができますが、すでに着手した業務に対する報酬は発生する場合があります。</p>
+                        <p>（スクロールして最後まで確認してください）</p>
+                        <p><strong>第1条（委託の内容）</strong><br>利用者は、当社に対し、所得税の確定申告書の作成および提出の代行を委託します。</p>
+                        <p><strong>第2条（資料の提供）</strong><br>利用者は、本サービスの遂行に必要な資料を、真実かつ正確な内容で当社に提供するものとします。</p>
+                        <p><strong>第3条（守秘義務）</strong><br>当社は、本サービスの遂行上知り得た利用者の個人情報および秘密情報を、厳重に管理し、意図的に第三者に漏洩しません。</p>
                         <p>個人情報の取り扱いに同意の上、送信してください。</p>
                     </div>
                     <label class="checkbox-card">
@@ -910,7 +879,7 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
 
         </form>
     </div>
-    <script src="script.js?v=16"></script>
+    <script src="script.js?v=17"></script>
 </body>
 
 </html>
