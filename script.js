@@ -2324,6 +2324,18 @@ function renderReview() {
 
     html += '</table>';
     container.innerHTML = html;
+
+    // Type 3用のボタン表示変更
+    const reviewSection = document.getElementById('section-review');
+    const nextBtn = reviewSection.querySelector('.btn-next');
+    if (nextBtn) {
+        if (incomeType === '3') {
+            nextBtn.textContent = '送信';
+            // アイコン等を追加する場合はここで innerHTML を操作
+        } else {
+            nextBtn.textContent = '次へ';
+        }
+    }
 }
 
 // ------------------------------------------------------------------
@@ -2766,7 +2778,7 @@ async function confirmSubmit() {
             if (businessMsg) businessMsg.classList.add('hidden');
         }
 
-        showStep(11); // Success page
+        showStep(10); // Success page
     } catch (error) {
         console.error('Submit error:', error);
         showErrorModal([{
