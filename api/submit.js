@@ -110,8 +110,9 @@ export default async function handler(req, res) {
             .select();
 
         if (error) {
-            console.error('Supabase error:', error);
-            throw error;
+            console.error('Supabase error (continuing to GAS):', error);
+            // DB保存失敗してもGASへ送るためにスローしない
+            // throw error; 
         }
 
         // -------------------------------------------------------------
@@ -136,7 +137,7 @@ export default async function handler(req, res) {
 
         res.status(200).json({
             success: true,
-            id: data[0].id,
+            id: (data && data[0]) ? data[0].id : 'gas-only',
             message: '送信が完了しました'
         });
     } catch (error) {
