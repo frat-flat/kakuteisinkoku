@@ -2711,16 +2711,20 @@ async function confirmSubmit() {
                     const errorDetail = await signRes.json().catch(() => ({}));
                     throw new Error('Upload Error: ' + (errorDetail.error || 'Server Internal Error'));
                 }
-                const { signedUrl, publicUrl } = await signRes.json();
+                const { signedUrl, publicUrl, skipped } = await signRes.json();
 
-                // Upload File to Supabase Storage (PUT)
-                const uploadRes = await fetch(signedUrl, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': item.file.type },
-                    body: item.file
-                });
+                if (skipped) {
+                    console.warn('File upload skipped due to missing config');
+                } else if (signedUrl) {
+                    // Upload File to Supabase Storage (PUT)
+                    const uploadRes = await fetch(signedUrl, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': item.file.type },
+                        body: item.file
+                    });
 
-                if (!uploadRes.ok) throw new Error(`${item.file.name}のアップロードに失敗しました`);
+                    if (!uploadRes.ok) throw new Error(`${item.file.name}のアップロードに失敗しました`);
+                }
 
                 // Store Result
                 if (!fileUploadResults[item.inputName]) {

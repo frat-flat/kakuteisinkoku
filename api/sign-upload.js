@@ -37,7 +37,7 @@
  * =============================================================================
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 
 export default async function handler(req, res) {
     if (req.method === 'OPTIONS') {
@@ -52,15 +52,15 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Initialize Supabase Client dynamically to catch config errors without crashing
-        const supabaseUrl = process.env.SUPABASE_URL;
-        const supabaseKey = process.env.SUPABASE_ANON_KEY;
-
-        if (!supabaseUrl || !supabaseKey) {
-            throw new Error(`Environment Configuration Error: SUPABASE_URL=${!!supabaseUrl}, SUPABASE_ANON_KEY=${!!supabaseKey}, ENV=${process.env.VERCEL_ENV}`);
+        // Check if Supabase client is available (initialized in lib)
+        if (!supabase) {
+            console.warn('Supabase not configured. Skipping file upload.');
+            return res.status(200).json({
+                skipped: true,
+                signedUrl: null,
+                publicUrl: '(upload skipped: DB config missing)'
+            });
         }
-
-        const supabase = createClient(supabaseUrl, supabaseKey);
 
         const { fileName, fileType } = req.body;
 
@@ -69,8 +69,6 @@ export default async function handler(req, res) {
         const path = `${Date.now()}_${sanitizedName}`;
 
         // Create Signed Upload URL
-        // We use the Service Key (via supabase client initialized in lib) 
-        // which has rights to generate this.
         const { data, error } = await supabase.storage
             .from('uploads')
             .createSignedUploadUrl(path);
