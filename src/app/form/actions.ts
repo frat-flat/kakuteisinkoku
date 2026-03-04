@@ -1,13 +1,15 @@
 "use server"
 
 import { PrismaClient } from "@prisma/client"
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3"
+import { Pool } from "pg"
+import { PrismaPg } from "@prisma/adapter-pg"
 import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import { formSchema } from "./schema"
 
-// Prisma 7+ Adapter Initialization
-const adapter = new PrismaBetterSqlite3({ url: "file:./dev.db" })
+// Prisma 7+ Postgres Adapter Configuration for Vercel Serverless
+const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
 export async function submitForm(data: z.infer<typeof formSchema>) {
