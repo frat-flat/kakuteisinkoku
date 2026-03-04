@@ -8,15 +8,22 @@ import { revalidatePath } from "next/cache"
 import { formSchema } from "./schema"
 
 // Prisma 7+ Postgres Adapter Configuration for Vercel Serverless
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-})
-const adapter = new PrismaPg(pool)
-const prisma = new PrismaClient({ adapter })
+let prisma: PrismaClient
 
 export async function submitForm(data: z.infer<typeof formSchema>) {
     try {
+        if (!process.env.DATABASE_URL) {
+            throw new Error("Vercelに『DATABASE_URL』環境変数が正しく認識されていません。設定画面で追加されていること、および追加後の「Redeploy」が完了していることをご確認ください。")
+        }
+
+        if (!prisma) {
+            const pool = new Pool({
+                connectionString: process.env.DATABASE_URL,
+                ssl: { rejectUnauthorized: false }
+            })
+            const adapter = new PrismaPg(pool)
+            prisma = new PrismaClient({ adapter })
+        }
         // フォームデータの検証
         const validatedData = formSchema.parse(data)
 
