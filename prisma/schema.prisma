@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============================================================
+// Entity（該当パートナー）
+// ============================================================
+
+model Entity {
+  id         String   @id @default(uuid())
+  entityCode String?  @unique @map("entity_code") // パートナーの一意のコードなど
+  status     String   @default("ACTIVE")
+  
+  // 共通フィールド
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // リレーション
+  basicHistories    EntityBasicHistory[]
+  familyMembers     EntityFamilyMemberHistory[]
+  bankAccounts      EntityBankAccountHistory[]
+
+  @@map("entity")
+}
+
+// ============================================================
+// グループ1: 基本情報
+// ============================================================
+
+model EntityBasicHistory {
+  id       String @id @default(uuid())
+  entityId String @map("entity_id")
+  entity   Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  // 基本情報
+  registeredName     String? @map("registered_name") // 名前
+  registeredNameKana String? @map("registered_name_kana")
+  
+  // -- マイナンバー（本人の個人番号） --
+  // バックエンドに保存し、16桁の数値を保持する。
+  myNumber           String? @map("my_number") 
+  
+  // 連絡先
+  email              String?
+
+  recordedAt   DateTime @default(now()) @map("recorded_at")
+
+  @@index([entityId])
+  @@map("entity_basic_history")
+}
+
+// ============================================================
+// グループ1.5: 家族のマイナンバー等情報
+// ============================================================
+
+model EntityFamilyMemberHistory {
+  id       String @id @default(uuid())
+  entityId String @map("entity_id")
+  entity   Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  // 家族情報
+  familyName       String? @map("family_name")
+  familyNameKana   String? @map("family_name_kana")
+  relationship     String? // 続柄（子、親など。配偶者は除く想定）
+  myNumber         String? @map("my_number") // 家族のマイナンバー
+
+  recordedAt   DateTime @default(now()) @map("recorded_at")
+
+  @@index([entityId])
+  @@map("entity_family_member_history")
+}
+
+// ============================================================
+// グループ3: 銀行口座履歴
+// ============================================================
+
+model EntityBankAccountHistory {
+  id       String @id @default(uuid())
+  entityId String @map("entity_id")
+  entity   Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  bankCode      String? @map("bank_code")       // 金融機関コード
+  bankName      String? @map("bank_name")       // 銀行名
+  branchCode    String? @map("branch_code")     // 支店番号
+  branchName    String? @map("branch_name")     // 支店名
+  accountType   String? @map("account_type")    // 口座種類
+  accountNumber String? @map("account_number")  // 口座番号
+  accountName   String? @map("account_name")    // 口座名義
+  
+  recordedAt   DateTime @default(now()) @map("recorded_at")
+
+  @@index([entityId])
+  @@map("entity_bank_account_history")
+}
