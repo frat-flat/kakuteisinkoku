@@ -8,7 +8,10 @@ import { revalidatePath } from "next/cache"
 import { formSchema } from "./schema"
 
 // Prisma 7+ Postgres Adapter Configuration for Vercel Serverless
-const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+})
 const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
@@ -83,6 +86,7 @@ export async function submitForm(data: z.infer<typeof formSchema>) {
         if (error instanceof z.ZodError) {
             return { success: false, message: "入力内容に誤りがあります" }
         }
-        return { success: false, message: "サーバーエラーが発生しました" }
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return { success: false, message: `サーバーエラー: ${errorMessage}` }
     }
 }
