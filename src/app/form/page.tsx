@@ -175,13 +175,13 @@ export default function FormPage() {
 
                             <div className="space-y-2">
                                 <Label htmlFor="myNumber">マイナンバー（個人番号） <span className="text-red-500">*</span></Label>
-                                <div className="text-xs text-neutral-500 mb-1">※パスワード形式で保護されます（16桁の数字）</div>
+                                <div className="text-xs text-neutral-500 mb-1">※パスワード形式で保護されます（12桁の数字）</div>
                                 <div className="relative">
                                     <Input
                                         id="myNumber"
                                         type={showMyNumber ? "text" : "password"}
                                         placeholder="1234567890123456"
-                                        maxLength={16}
+                                        maxLength={12}
                                         {...register("myNumber")}
                                     />
                                     <button
@@ -206,7 +206,7 @@ export default function FormPage() {
                                         id="myNumberConfirm"
                                         type={showMyNumberConfirm ? "text" : "password"}
                                         placeholder="確認のためもう一度ご入力ください"
-                                        maxLength={16}
+                                        maxLength={12}
                                         {...register("myNumberConfirm")}
                                     />
                                     <button
@@ -272,7 +272,7 @@ export default function FormPage() {
                                             <Input
                                                 type={showFamilyNumber[index] ? "text" : "password"}
                                                 placeholder="1234567890123456"
-                                                maxLength={16}
+                                                maxLength={12}
                                                 {...register(`familyMembers.${index}.myNumber`)}
                                             />
                                             <button
@@ -296,7 +296,7 @@ export default function FormPage() {
                                             <Input
                                                 type={showFamilyNumberConfirm[index] ? "text" : "password"}
                                                 placeholder="確認用"
-                                                maxLength={16}
+                                                maxLength={12}
                                                 {...register(`familyMembers.${index}.myNumberConfirm`)}
                                             />
                                             <button

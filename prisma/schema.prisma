@@ -41,7 +41,7 @@ model EntityBasicHistory {
   registeredNameKana String? @map("registered_name_kana")
   
   // -- マイナンバー（本人の個人番号） --
-  // バックエンドに保存し、16桁の数値を保持する。
+  // バックエンドに保存し、12桁の数値を保持する。
   myNumber           String? @map("my_number") 
   
   // 連絡先

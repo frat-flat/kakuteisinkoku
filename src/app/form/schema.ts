@@ -5,7 +5,7 @@ export const formSchema = z.object({
 
     // マイナンバー情報
     myNumber: z.string()
-        .regex(/^\d{16}$/, { message: "ご自身のマイナンバーは16桁の半角数字で入力してください" }),
+        .regex(/^\d{12}$/, { message: "ご自身のマイナンバーは12桁の半角数字で入力してください" }),
     myNumberConfirm: z.string()
         .min(1, { message: "確認のためもう一度入力してください" }),
 
@@ -14,7 +14,7 @@ export const formSchema = z.object({
         name: z.string().min(1, { message: "ご家族のお名前を入力してください" }),
         relationship: z.string().min(1, { message: "続柄を入力してください" }),
         myNumber: z.string()
-            .regex(/^\d{16}$/, { message: "ご家族のマイナンバーは16桁の半角数字で入力してください" }),
+            .regex(/^\d{12}$/, { message: "ご家族のマイナンバーは12桁の半角数字で入力してください" }),
         myNumberConfirm: z.string()
             .min(1, { message: "確認入力は必須です" }),
     })).superRefine((members, ctx) => {
