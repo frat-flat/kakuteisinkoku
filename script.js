@@ -1923,6 +1923,7 @@ async function selectBankCandidate() {
     const select = document.getElementById('bankCandidateSelect');
     const input = document.getElementById('bankNameSearch');
     const bankCodeInput = document.getElementById('bankCode');
+    const realBankNameInput = document.getElementById('realBankName');
 
     const code = select.value;
     if (!code) return;
@@ -1930,6 +1931,7 @@ async function selectBankCandidate() {
     const name = select.selectedOptions[0].dataset.name;
     input.value = name;
     bankCodeInput.value = code;
+    if (realBankNameInput) realBankNameInput.value = name;
     select.style.display = 'none';
 
     // Enable Branch Inputs
@@ -2458,6 +2460,7 @@ const FORM_FIELDS = [
     { name: 'depKana_1', label: '扶養親族1_フリガナ', type: 'text' },
     { name: 'depRel_1', label: '扶養親族1_続柄', type: 'select', map: { 'child': '子', 'parent': '親', 'spouse_special': '配偶者（特別）', 'other': 'その他' } },
     { name: 'depDob_1', label: '扶養親族1_生年月日', type: 'text' },
+    { name: 'depMyNumber_1', label: '扶養親族1_マイナンバー', type: 'text' },
     { name: 'depIncome_1', label: '扶養親族1_所得', type: 'text' },
     { name: 'depDisability_1', label: '扶養親族1_障害区分', type: 'radio', map: { 'none': 'なし', 'general': '一般障害', 'special': '特別障害' } },
     { name: 'depLiveCheck_1', label: '扶養親族1_同居区分', type: 'radio', map: { 'together': '同居', 'separate': '別居' } },
@@ -2466,6 +2469,7 @@ const FORM_FIELDS = [
     { name: 'depKana_2', label: '扶養親族2_フリガナ', type: 'text' },
     { name: 'depRel_2', label: '扶養親族2_続柄', type: 'select', map: { 'child': '子', 'parent': '親', 'spouse_special': '配偶者（特別）', 'other': 'その他' } },
     { name: 'depDob_2', label: '扶養親族2_生年月日', type: 'text' },
+    { name: 'depMyNumber_2', label: '扶養親族2_マイナンバー', type: 'text' },
     { name: 'depIncome_2', label: '扶養親族2_所得', type: 'text' },
     { name: 'depDisability_2', label: '扶養親族2_障害区分', type: 'radio', map: { 'none': 'なし', 'general': '一般障害', 'special': '特別障害' } },
     { name: 'depLiveCheck_2', label: '扶養親族2_同居区分', type: 'radio', map: { 'together': '同居', 'separate': '別居' } },
@@ -2474,6 +2478,7 @@ const FORM_FIELDS = [
     { name: 'depKana_3', label: '扶養親族3_フリガナ', type: 'text' },
     { name: 'depRel_3', label: '扶養親族3_続柄', type: 'select', map: { 'child': '子', 'parent': '親', 'spouse_special': '配偶者（特別）', 'other': 'その他' } },
     { name: 'depDob_3', label: '扶養親族3_生年月日', type: 'text' },
+    { name: 'depMyNumber_3', label: '扶養親族3_マイナンバー', type: 'text' },
     { name: 'depIncome_3', label: '扶養親族3_所得', type: 'text' },
     { name: 'depDisability_3', label: '扶養親族3_障害区分', type: 'radio', map: { 'none': 'なし', 'general': '一般障害', 'special': '特別障害' } },
     { name: 'depLiveCheck_3', label: '扶養親族3_同居区分', type: 'radio', map: { 'together': '同居', 'separate': '別居' } },
@@ -2482,6 +2487,7 @@ const FORM_FIELDS = [
     { name: 'depKana_4', label: '扶養親族4_フリガナ', type: 'text' },
     { name: 'depRel_4', label: '扶養親族4_続柄', type: 'select', map: { 'child': '子', 'parent': '親', 'spouse_special': '配偶者（特別）', 'other': 'その他' } },
     { name: 'depDob_4', label: '扶養親族4_生年月日', type: 'text' },
+    { name: 'depMyNumber_4', label: '扶養親族4_マイナンバー', type: 'text' },
     { name: 'depIncome_4', label: '扶養親族4_所得', type: 'text' },
     { name: 'depDisability_4', label: '扶養親族4_障害区分', type: 'radio', map: { 'none': 'なし', 'general': '一般障害', 'special': '特別障害' } },
     { name: 'depLiveCheck_4', label: '扶養親族4_同居区分', type: 'radio', map: { 'together': '同居', 'separate': '別居' } },
@@ -2490,6 +2496,7 @@ const FORM_FIELDS = [
     { name: 'depKana_5', label: '扶養親族5_フリガナ', type: 'text' },
     { name: 'depRel_5', label: '扶養親族5_続柄', type: 'select', map: { 'child': '子', 'parent': '親', 'spouse_special': '配偶者（特別）', 'other': 'その他' } },
     { name: 'depDob_5', label: '扶養親族5_生年月日', type: 'text' },
+    { name: 'depMyNumber_5', label: '扶養親族5_マイナンバー', type: 'text' },
     { name: 'depIncome_5', label: '扶養親族5_所得', type: 'text' },
     { name: 'depDisability_5', label: '扶養親族5_障害区分', type: 'radio', map: { 'none': 'なし', 'general': '一般障害', 'special': '特別障害' } },
     { name: 'depLiveCheck_5', label: '扶養親族5_同居区分', type: 'radio', map: { 'together': '同居', 'separate': '別居' } },

@@ -747,6 +747,8 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
                             oninput="handleBankNameInput()" onfocus="handleBankNameInput()" autocomplete="off">
                         <!-- Hidden real code selection -->
                         <input type="hidden" name="bankCode" id="bankCode">
+                        <!-- Hidden real name selection for form data -->
+                        <input type="hidden" name="bankName" id="realBankName">
                         <!-- Select box for candidates -->
                         <select id="bankCandidateSelect" size="5" onchange="selectBankCandidate()"
                             onclick="selectBankCandidate()" onblur="setTimeout(() => this.style.display='none', 200)">
@@ -867,7 +869,6 @@ script.jsの読み込みにバージョンパラメータ（?v=13）を付与し
                     <h2>送信完了</h2>
                     <p>ご提出ありがとうございます。</p>
                     <p>内容を確認し、必要に応じて担当者よりご連絡いたします。</p>
-                    <p>確認メールをお送りしましたので、届いているかご確認ください。</p>
                 </div>
                 <!-- 事業所得ありの場合の完了メッセージ (incomeType 3) -->
                 <div id="completionMessageBusiness" class="message-box success hidden">

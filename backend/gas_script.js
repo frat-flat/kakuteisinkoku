@@ -86,7 +86,10 @@ function doPost(e) {
         // C: フリガナ
         ROW_DATA.push(resolve(data.fullNameKana));
 
-        // D: 生年月日
+        // D: 【追加】本人マイナンバー
+        ROW_DATA.push(resolve(data.myNumber));
+
+        // E: 生年月日
         ROW_DATA.push(resolve(data.dob));
 
         // E: 郵便番号
@@ -136,7 +139,10 @@ function doPost(e) {
         // Q: 配偶者氏名
         ROW_DATA.push(resolve(data.spouseName));
 
-        // R: 配偶者生年月日
+        // R: 【追加】配偶者マイナンバー
+        ROW_DATA.push(resolve(data.spouseMyNumber));
+
+        // S: 配偶者生年月日
         ROW_DATA.push(resolve(data.spouseDob));
 
         // S: 配偶者障害区分
@@ -235,6 +241,7 @@ function doPost(e) {
             ROW_DATA.push(resolve(data[`depKana_${i}`]));
             ROW_DATA.push(resolve(data[`depRel_${i}`]));
             ROW_DATA.push(resolve(data[`depDob_${i}`]));
+            ROW_DATA.push(resolve(data[`depMyNumber_${i}`])); // 【追加】扶養親族マイナンバー
             ROW_DATA.push(resolve(data[`depIncome_${i}`]));
             ROW_DATA.push(resolve(data[`depDisability_${i}`]));
             ROW_DATA.push(resolve(data[`depLiveCheck_${i}`]));

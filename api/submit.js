@@ -21,72 +21,70 @@ export default async function handler(req, res) {
         // -------------------------------------------------------------
         // 1. Prepare Data for Supabase (Sanitize) & Save
         // -------------------------------------------------------------
-        if (supabase) {
-            try {
-                const dbData = {};
-                Object.keys(formData).forEach(key => {
-                    const val = formData[key];
-                    if (val === '[SKIPPED]' || val === '') {
-                        dbData[key] = null;
-                    } else {
-                        dbData[key] = val;
-                    }
-                });
+        if (!supabase) {
+            console.error('Supabase client not initialized');
+            return res.status(500).json({ message: 'データベース設定が完了していないため、送信を完了できません。管理者にお問い合わせください。' });
+        }
 
-                // データベースに保存
-                const { data, error } = await supabase
-                    .from('submissions')
-                    .insert([{
-                        // 基本情報
-                        name: dbData.fullName || null,
-                        name_kana: dbData.fullNameKana || null,
-                        dob: dbData.dob || null,
-                        zip: dbData.zipCode || null,
-                        address: (dbData.prefecture || '') + (dbData.address1 || '') + (dbData.address2 || ''),
-                        phone: dbData.phone || null,
-                        email: dbData.email || null,
-
-                        // 収入・申告情報
-                        income_type: dbData.incomeType || null,
-                        blue_return: dbData.blueReturn || null,
-                        past_filing: dbData.pastFiling || null,
-                        etax_id: dbData.etaxId || null,
-
-                        // 世帯・家族情報
-                        head_of_household: dbData.isHead || null,
-                        relation_to_head: dbData.headRelation || null,
-                        marital_status: dbData.maritalStatus || null,
-                        spouse_name: dbData.spouseName || null,
-                        spouse_as_dependent: dbData.spouseAsDependent || null,
-                        has_dependents: dbData.hasDependents || null,
-                        dependent_count: (dbData.dependentCount && !isNaN(dbData.dependentCount)) ? parseInt(dbData.dependentCount) : null,
-
-                        // 控除情報
-                        furusato_nozei: dbData.furusatoCount ? 'あり' : null,
-                        medical_expenses: dbData.medicalExpenses || null,
-
-                        // 銀行情報
-                        account_type: dbData.accountType || null,
-                        bank_name: dbData.bankName || null,
-                        branch_name: dbData.branchName || null,
-                        account_number: dbData.accountNumber || null,
-                        account_holder: dbData.accountHolder || null,
-
-                        // 全データをJSON形式で保存
-                        full_form_data: formData
-                    }])
-                    .select();
-
-                if (error) {
-                    console.error('Supabase error (continuing to GAS):', error);
-                } else if (data && data[0]) {
-                    dbId = data[0].id;
-                }
-            } catch (dbError) {
-                console.error('Supabase unexpected error (continuing):', dbError);
+        const dbData = {};
+        Object.keys(formData).forEach(key => {
+            const val = formData[key];
+            if (val === '[SKIPPED]' || val === '') {
+                dbData[key] = null;
+            } else {
+                dbData[key] = val;
             }
-        } else {
-            console.log('Supabase client not initialized (skipping DB save)');
+        });
+
+        // データベースに保存
+        const { data, error } = await supabase
+            .from('submissions')
+            .insert([{
+                // 基本情報
+                name: dbData.fullName || null,
+                name_kana: dbData.fullNameKana || null,
+                dob: dbData.dob || null,
+                zip: dbData.zipCode || null,
+                address: (dbData.prefecture || '') + (dbData.address1 || '') + (dbData.address2 || ''),
+                phone: dbData.phone || null,
+                email: dbData.email || null,
+
+                // 収入・申告情報
+                income_type: dbData.incomeType || null,
+                blue_return: dbData.blueReturn || null,
+                past_filing: dbData.pastFiling || null,
+                etax_id: dbData.etaxId || null,
+
+                // 世帯・家族情報
+                head_of_household: dbData.isHead || null,
+                relation_to_head: dbData.headRelation || null,
+                marital_status: dbData.maritalStatus || null,
+                spouse_name: dbData.spouseName || null,
+                spouse_as_dependent: dbData.spouseAsDependent || null,
+                has_dependents: dbData.hasDependents || null,
+                dependent_count: (dbData.dependentCount && !isNaN(dbData.dependentCount)) ? parseInt(dbData.dependentCount) : null,
+
+                // 控除情報
+                furusato_nozei: dbData.furusatoCount ? 'あり' : null,
+                medical_expenses: dbData.medicalExpenses || null,
+
+                // 銀行情報
+                account_type: dbData.accountType || null,
+                bank_name: dbData.bankName || null,
+                branch_name: dbData.branchName || null,
+                account_number: dbData.accountNumber || null,
+                account_holder: dbData.accountHolder || null,
+
+                // 全データをJSON形式で保存
+                full_form_data: formData
+            }])
+            .select();
+
+        if (error) {
+            console.error('Supabase insert error:', error);
+            throw new Error('データベースへの保存に失敗しました。');
+        } else if (data && data[0]) {
+            dbId = data[0].id;
         }
 
         // -------------------------------------------------------------
@@ -104,22 +102,15 @@ export default async function handler(req, res) {
 
         } catch (gasError) {
             console.error('GAS Sync Error:', gasError);
-            // GASエラーでも、DB保存ができていれば成功扱いにすべきか？
-            // 両方失敗ならエラーだが、片方成功なら成功とみなす。
-            if (!dbId && !supabase) {
-                // DBもなくGASも失敗ならエラー
-                throw new Error('スプレッドシートへの通信に失敗しました');
-            }
+            // GASエラーでも、DB保存ができていれば成功扱いとして一旦完了させる
+            console.log('GAS sync failed but data is saved in DB securely.');
         }
         // ---------------------------------------
 
-        res.status(200).json({
-            success: true,
-            id: dbId || 'gas-submit',
-            message: '送信が完了しました'
-        });
+        return res.status(200).json({ success: true, dbId: dbId });
+
     } catch (error) {
-        console.error('Submit error:', error);
+        console.error('Submit API Error:', error);
         res.status(500).json({
             error: error.message,
             message: '送信に失敗しました。もう一度お試しください。'
