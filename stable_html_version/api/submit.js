@@ -56,7 +56,7 @@ export default async function handler(req, res) {
                 });
 
                 // GASのAPI制限回避のために少し待つ
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
 
             return res.status(200).json({
