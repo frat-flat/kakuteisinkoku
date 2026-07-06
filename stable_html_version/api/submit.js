@@ -32,32 +32,33 @@ export default async function handler(req, res) {
 
             if (dbError) throw dbError;
 
-            const results = [];
-
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i];
+            // すべてのデータを並列（一斉）にGASへ送信
+            const results = await Promise.all(rows.map(async (row, index) => {
                 const formData = row.full_form_data;
-
-                // スプレッドシート（GAS）へ送信
-                const response = await fetch(GAS_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
-                });
-
-                const responseText = await response.text();
-                
-                results.push({
-                    index: i + 1,
-                    name: row.name,
-                    created_at: row.created_at,
-                    status: response.status,
-                    response: responseText.substring(0, 100)
-                });
-
-                // GASのAPI制限回避のために少し待つ
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
+                try {
+                    const response = await fetch(GAS_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+                    const responseText = await response.text();
+                    return {
+                        index: index + 1,
+                        name: row.name,
+                        created_at: row.created_at,
+                        status: response.status,
+                        response: responseText.substring(0, 100)
+                    };
+                } catch (err) {
+                    return {
+                        index: index + 1,
+                        name: row.name,
+                        created_at: row.created_at,
+                        status: "error",
+                        response: err.message
+                    };
+                }
+            }));
 
             return res.status(200).json({
                 message: "過去データの同期処理が完了しました。",
