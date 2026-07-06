@@ -62,6 +62,7 @@ export default async function handler(req, res) {
 
             return res.status(200).json({
                 message: "過去データの同期処理が完了しました。",
+                gas_url_used: GAS_URL,
                 total_synced: rows.length,
                 results: results
             });
