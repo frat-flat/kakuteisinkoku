@@ -80,7 +80,7 @@ export default async function handler(req, res) {
         console.error('Submit API Error:', error);
         res.status(500).json({
             error: error.message,
-            message: '送信に失敗しました。もう一度お試しください。'
+            message: error.message || '送信に失敗しました。もう一度お試しください。'
         });
     }
 }
