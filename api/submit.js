@@ -3,13 +3,77 @@ import { supabase } from '../lib/supabase.js';
 export default async function handler(req, res) {
     // CORSヘッダー
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
 
+    // =========================================================================
+    // ■ GETリクエストの場合は過去データのスプレッドシート再同期を実行
+    // =========================================================================
+    if (req.method === 'GET') {
+        try {
+            const GAS_URL = process.env.GAS_WEBHOOK_URL;
+            if (!GAS_URL) {
+                return res.status(400).json({ error: "GAS_WEBHOOK_URLがVercelの環境変数に設定されていません。" });
+            }
+
+            if (!supabase) {
+                return res.status(500).json({ error: "Supabaseクライアントが初期化されていません。環境変数をご確認ください。" });
+            }
+
+            // Supabaseから過去の全データを取得
+            const { data: rows, error: dbError } = await supabase
+                .from('submissions')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            if (dbError) throw dbError;
+
+            const results = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const formData = row.full_form_data;
+
+                // スプレッドシート（GAS）へ送信
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const responseText = await response.text();
+                
+                results.push({
+                    index: i + 1,
+                    name: row.name,
+                    created_at: row.created_at,
+                    status: response.status,
+                    response: responseText.substring(0, 100)
+                });
+
+                // GASのAPI制限回避のために少し待つ
+                await new Promise(resolve => setTimeout(resolve, 1500));
+            }
+
+            return res.status(200).json({
+                message: "過去データの同期処理が完了しました。",
+                total_synced: rows.length,
+                results: results
+            });
+
+        } catch (syncError) {
+            console.error("Sync GET Error:", syncError);
+            return res.status(500).json({ error: syncError.message });
+        }
+    }
+
+    // =========================================================================
+    // ■ POSTリクエストの場合は通常の新規送信処理
+    // =========================================================================
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
