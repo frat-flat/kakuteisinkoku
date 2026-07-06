@@ -62,15 +62,24 @@ export default async function handler(req, res) {
         const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbwQlnLApAXOIR8ISOKYpa7EeXM0VuMGNlZjOc3sg4KTF61gdkcY8TokF7N9Xt-7dcWJ/exec';
 
         try {
-            await fetch(GAS_URL, {
+            const gasRes = await fetch(GAS_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
 
+            if (!gasRes.ok) {
+                throw new Error(`HTTP ${gasRes.status}`);
+            }
+
+            const gasResult = await gasRes.json().catch(() => ({}));
+            if (gasResult.status === 'error') {
+                throw new Error(`GASエラー: ${gasResult.message}`);
+            }
+
         } catch (gasError) {
             console.error('GAS Sync Error:', gasError);
-            throw new Error('スプレッドシートへの通信に失敗しました。');
+            throw new Error('スプレッドシートへの通信に失敗しました: ' + gasError.message);
         }
         // ---------------------------------------
 
