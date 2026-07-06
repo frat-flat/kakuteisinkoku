@@ -44,7 +44,7 @@ function doPost(e) {
 
         // アクティブなスプレッドシートとシートを取得
         const ss = SpreadsheetApp.getActiveSpreadsheet();
-        const sheet = ss.getActiveSheet();
+        const sheet = ss.getSheets()[0];
 
         // ----------------------------------------------------
         // HELPER: Address Concatenation
