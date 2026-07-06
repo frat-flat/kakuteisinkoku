@@ -19,14 +19,12 @@ export default async function handler(req, res) {
         let dbId = null;
 
         // -------------------------------------------------------------
-        // 1. Prepare Data for Supabase (Sanitize) - DB saving skipped
+        // 1. Prepare Data for Supabase (Sanitize)
         // -------------------------------------------------------------
-        /*
         if (!supabase) {
             console.error('Supabase client not initialized');
             return res.status(500).json({ message: 'データベース設定が完了していないため、送信を完了できません。管理者にお問い合わせください。' });
         }
-        */
 
         const dbData = {};
         Object.keys(formData).forEach(key => {
@@ -38,15 +36,13 @@ export default async function handler(req, res) {
             }
         });
 
-        /*
-        // データベースに保存 (スキップ)
+        // データベースに保存
         const { data, error } = await supabase
             .from('submissions')
             .insert([{
                 // 基本情報
                 name: dbData.fullName || null,
                 name_kana: dbData.fullNameKana || null,
-                ... 
                 // 全データをJSON形式で保存
                 full_form_data: formData
             }])
@@ -58,13 +54,12 @@ export default async function handler(req, res) {
         } else if (data && data[0]) {
             dbId = data[0].id;
         }
-        */
 
         // -------------------------------------------------------------
         // 2. Google Sheets Integration (GAS)
         // -------------------------------------------------------------
         // 以前のシート用のGAS URL
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwQlnLApAXOIR8ISOKYpa7EeXM0VuMGNlZjOc3sg4KTF61gdkcY8TokF7N9Xt-7dcWJ/exec';
+        const GAS_URL = process.env.GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbwQlnLApAXOIR8ISOKYpa7EeXM0VuMGNlZjOc3sg4KTF61gdkcY8TokF7N9Xt-7dcWJ/exec';
 
         try {
             await fetch(GAS_URL, {
@@ -79,7 +74,7 @@ export default async function handler(req, res) {
         }
         // ---------------------------------------
 
-        return res.status(200).json({ success: true, dbId: 'gas-only' });
+        return res.status(200).json({ success: true, dbId: dbId });
 
     } catch (error) {
         console.error('Submit API Error:', error);
