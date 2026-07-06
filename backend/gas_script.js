@@ -44,7 +44,10 @@ function doPost(e) {
 
         // アクティブなスプレッドシートとシートを取得
         const ss = SpreadsheetApp.getActiveSpreadsheet();
-        const sheet = ss.getSheetByName("回答データ") || ss.getSheets()[0];
+        const sheet = ss.getSheetByName("回答データ");
+        if (!sheet) {
+            throw new Error("スプレッドシート内に『回答データ』という名前のタブが見つかりません。タブ名の前後に不要なスペース（空白）が入っていないかご確認ください。");
+        }
 
         // ----------------------------------------------------
         // HELPER: Address Concatenation
