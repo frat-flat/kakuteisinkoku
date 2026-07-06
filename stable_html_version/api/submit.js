@@ -73,7 +73,12 @@ export default async function handler(req, res) {
             }
 
             const gasResult = await gasRes.json().catch(() => ({}));
-            if (gasResult.status !== 'success') {
+            const isSuccess = 
+                gasResult.status === 'success' || 
+                gasResult.result === 'success' || 
+                (gasResult.message && gasResult.message.includes('保存が完了しました'));
+
+            if (!isSuccess) {
                 throw new Error(gasResult.message || 'GASからの応答が正しくありません（アクセス権限が「全員」になっていない可能性があります）。');
             }
 
