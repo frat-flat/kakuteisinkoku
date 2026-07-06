@@ -50,7 +50,7 @@ export default async function handler(req, res) {
 
         if (error) {
             console.error('Supabase insert error:', error);
-            throw new Error('データベースへの保存に失敗しました。');
+            throw new Error('データベースへの保存に失敗しました: ' + (error.message || JSON.stringify(error)));
         } else if (data && data[0]) {
             dbId = data[0].id;
         }
